@@ -10,6 +10,7 @@
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
+//#Caitlin
 void initialize(){}
 
 //open bof
