@@ -11,6 +11,7 @@
 #define MEMORY_SIZE_IN_WORDS 32768
 #define NUM_REGISTERS 8
 
+//memory array for the VM
 static union mem_u{
     word_type words[MEMORY_SIZE_IN_WORDS];
     uword_type uwords[MEMORY_SIZE_IN_WORDS];
@@ -19,13 +20,20 @@ static union mem_u{
 
 //VM Registers
 int registers[NUM_REGISTERS];
+int program_counter;
 
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
 //#Caitlin
 void initialize(){
-
+    //global pointer is index 0
+    //stack pointer is index 1
+    //frame pointer is index 2
+    //indices 3-6 are unndesignated
+    //return address register is index 7
+    registers = {0};
+    program_counter = 0;    
 }
 
 //open bof
@@ -34,7 +42,9 @@ void open_file(){}
 
 //read/decode and put instructions into memory
 //will probably use a lot from instructions file
-void load_instructions(){}
+void load_instructions(){
+    //perform invariant checks AFTER file is loaded
+}
 
 //do what the instruction says
 //move fp, sp and pc as needed
