@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "machine.h"
 #include "instruction.h"
+#include "disasm.h"
 
 int main(int argc, char *argv[])
 {
@@ -12,6 +13,7 @@ int main(int argc, char *argv[])
     //if the second arg is the -p flag, print instructions
     if (argv[1] == "-p") {
 	    //print the instructions
+	    //use disasmProgram(stdout, BOFFILE name)
     }
     //if the number of arguments is eaxctly two, run instructions
     if(argc == 2){
