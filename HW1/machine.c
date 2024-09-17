@@ -6,12 +6,27 @@
 #include "instruction.h"
 #include "utilities.h"
 #include "machine.h"
+#include "machine_types.h"
+
+#define MEMORY_SIZE_IN_WORDS 32768
+#define NUM_REGISTERS 8
+
+static union mem_u{
+    word_type words[MEMORY_SIZE_IN_WORDS];
+    uword_type uwords[MEMORY_SIZE_IN_WORDS];
+    bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
+}memory;
+
+//VM Registers
+int registers[NUM_REGISTERS];
 
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
 //#Caitlin
-void initialize(){}
+void initialize(){
+
+}
 
 //open bof
 //should call load_instructions and close file when done
