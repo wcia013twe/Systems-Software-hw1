@@ -84,6 +84,12 @@ void run(const char *filename){
     }
 }
 
+//when given the "-p" flag, prints out the instructions as written
+void print_command (){
+    const char *filename = open_file();
+    disasmProgram(stdout, filename);
+}
+
 //prints the current state of the memory stack
 //could be useful for debugging
 void print_state(){}
