@@ -27,7 +27,7 @@ void initialize(){}
 //open bof
 //should call load_instructions and close file when done
 //Madigan 9/18
-void open_file(const char *filename){
+char * open_file(const char *filename){
 
     BOFFILE *f = malloc(sizeof(BOFFILE));
     if (f == NULL) {
@@ -45,6 +45,7 @@ void open_file(const char *filename){
         bail_with_error("Error closing file");
     }
 
+    return f;
 }
 
 //read/decode and put instructions into memory
