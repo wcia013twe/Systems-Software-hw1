@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
     //if the second arg is the -p flag, print instructions
     if (argv[1] == "-p") {
-	    //print the instructions
+	print_command();
     }
     //if the number of arguments is eaxctly two, run instructions
     if(argc == 2){
