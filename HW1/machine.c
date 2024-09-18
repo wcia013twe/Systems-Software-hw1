@@ -33,7 +33,8 @@ void initialize(){
     //indices 3-6 are unndesignated
     //return address register is index 7
     registers = {0};
-    program_counter = 0;    
+    program_counter = 0; 
+    memory = {0};
 }
 
 //open bof
