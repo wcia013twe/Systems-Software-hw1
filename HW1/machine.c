@@ -7,6 +7,7 @@
 #include "utilities.h"
 #include "machine.h"
 #include "machine_types.h"
+#include "disasm.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
 #define NUM_REGISTERS 8
@@ -60,6 +61,11 @@ void trace(){}
 //call init, open, load, execute and trace 
 void run(const char *filename){
     printf("run has been called");
+}
+
+//when given the "-p" flag, prints out the instructions as written
+void print_command (const char *filename){
+    disasmProgram(stdout, filename);
 }
 
 //prints the current state of the memory stack
