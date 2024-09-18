@@ -37,8 +37,6 @@ STUDENTTESTLISTINGS = $(TESTS:.bof=.myp)
 $(VM): $(VM_OBJECTS)
 	$(CC) $(CFLAGS) -o $(VM) $(VM_OBJECTS)
 
-%.o: %.c %.h
-	$(CC) $(CFLAGS) -c $<
 
 # rule for compiling individual .c files
 %.o: %.c %.h
