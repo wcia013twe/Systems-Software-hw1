@@ -11,4 +11,6 @@ extern void run(const char *filename);
 
 //prints the state of the memory stack for debugging
 extern void print_state();
+
+void load_instructions(BOFFILE *f);
 #endif

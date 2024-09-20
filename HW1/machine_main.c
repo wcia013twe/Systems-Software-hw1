@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "machine.h"
 #include "instruction.h"
 #include "disasm.h"
@@ -11,7 +12,7 @@ int main(int argc, char *argv[])
     const char *command = argv[0];
 
     //if the second arg is the -p flag, print instructions
-    if (argv[1] == "-p") {
+    if (strcmp(argv[1], "-p") == 0) {
 	    //print the instructions
 	    //use disasmProgram(stdout, BOFFILE name)
     }
