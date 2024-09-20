@@ -60,21 +60,6 @@ void load_instructions(BOFFILE *f){
         printf("file pointer not at beginning");
     }
 
-/*
-    char buffer[512]; // Buffer to hold each record
-    size_t bytesRead;
-    // Read the file until the end
-    while ((bytesRead = fread(buffer, 1, 512, f->fileptr)) > 0) {
-        // Print the read bytes as a string, assuming it’s null-terminated
-        // Note: Adjust as necessary for your data format
-        printf("Read %zu bytes: ", bytesRead);
-        for (size_t i = 0; i < bytesRead; i++) {
-            putchar(buffer[i]); // Print each character
-        }
-        putchar('\n'); // Newline after each record
-    }
-*/
-
     int num_instr = 0;
     fseek(f->fileptr,0,SEEK_END); //move ptr to end
     int end = ftell(f->fileptr); //tell me where the ptr is

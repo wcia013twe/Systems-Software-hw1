@@ -50,15 +50,6 @@ instr_type instruction_type(bin_instr_t i) {
 // but exit with an error if there is a problem.
 bin_instr_t instruction_read(BOFFILE bf)
 {
-	/*
-	if(bf.fileptr == NULL){
-	    printf("fileptr null");
-    }
-    if (fseek(bf.fileptr, 0, SEEK_SET) != 0) {
-        printf("file pointer not at beginning");
-    }
-	*/
-
     bin_instr_t bi;
     size_t rd = fread(&bi, sizeof(bi), 1, bf.fileptr);
     if (rd != 1) {
