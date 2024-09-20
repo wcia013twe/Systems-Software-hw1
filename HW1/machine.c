@@ -7,6 +7,8 @@
 #include "utilities.h"
 #include "machine.h"
 #include "bof.h"
+#include "machine_types.h"
+#include "disasm.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
 #define NUM_REGISTERS 8
@@ -17,17 +19,29 @@ static union mem_u{
     uword_type uwords[MEMORY_SIZE_IN_WORDS];
     bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
 }memory;
+//VM Registers
+int registers[NUM_REGISTERS];
+int program_counter;
 
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
 //#Caitlin
-void initialize(){}
+void initialize(){
+    //global pointer is index 0
+    //stack pointer is index 1
+    //frame pointer is index 2
+    //indices 3-6 are unndesignated
+    //return address register is index 7
+    registers = {0};
+    program_counter = 0; 
+    memory = {0};
+}
 
 //open bof
 //should call load_instructions and close file when done
 //Madigan 9/18
-void open_file(const char *filename){
+char * open_file(const char *filename){
 
     BOFFILE *f = malloc(sizeof(BOFFILE));
     if (f == NULL) {
@@ -45,6 +59,7 @@ void open_file(const char *filename){
         bail_with_error("Error closing file");
     }
 
+    return f;
 }
 
 //read/decode and put instructions into memory
@@ -81,6 +96,8 @@ void load_instructions(BOFFILE *f){
     if(num_instr >= MEMORY_SIZE_IN_WORDS){
         bail_with_error("instr array full");
     }
+void load_instructions(){
+    //perform invariant checks AFTER file is loaded
 }
 
 //do what the instruction says
@@ -108,6 +125,18 @@ void run(const char *filename){
         instruction_print(out_file, int_add, memory.instrs[i]);
     }
     fclose(out_file);
+}
+
+//when given the "-p" flag, prints out the instructions as written
+void print_command (){
+    const char *filename = open_file();
+    disasmProgram(stdout, filename);
+}
+
+//when given the "-p" flag, prints out the instructions as written
+void print_command (){
+    const char *filename = open_file();
+    disasmProgram(stdout, filename);
 }
 
 //prints the current state of the memory stack
