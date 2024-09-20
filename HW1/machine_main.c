@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1], "-p") == 0) {
 	    //print the instructions
 	    //use disasmProgram(stdout, BOFFILE name)
+    if (argv[1] == "-p") {
+	  print_command();
     }
     //if the number of arguments is eaxctly two, run instructions
     if(argc == 2){
