@@ -48,7 +48,7 @@ char * open_file(const char *filename){
     bail_with_error("Memory allocation failed");
     }
     f->filename = filename;
-    f->fileptr = fopen(filename, "rb");
+    f->fileptr = fopen(f->filename, "rb");
     if (f->fileptr == NULL) {
     bail_with_error("Error opening file: %s", filename);
     }
@@ -66,9 +66,29 @@ char * open_file(const char *filename){
 //will probably use a lot from instructions file
 void load_instructions(BOFFILE *f){
 
+    //should initialize PC to val specified in bof here
+
+    if(f->fileptr == NULL){
+        printf("fileptr null");
+    }
+    if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
+        printf("file pointer not at beginning");
+    }
+
     int num_instr = 0;
-    while (num_instr >= MEMORY_SIZE_IN_WORDS) {
+    fseek(f->fileptr,0,SEEK_END); //move ptr to end
+    int end = ftell(f->fileptr); //tell me where the ptr is
+
+    fseek(f->fileptr, 0, SEEK_SET); //move ptr back to beginning
+    while (num_instr <= MEMORY_SIZE_IN_WORDS) {
+        printf("%d", num_instr);
+        if(ftell(f->fileptr) == end){
+            printf("Reached the end of the file");
+            printf("%ld %d", ftell(f->fileptr), end);
+            break;
+        }
         bin_instr_t instr = instruction_read(*f);
+        //puts the bin_instr_t into memory at memory.instrs
         memory.instrs[num_instr] = instr;
         num_instr++;
     }
@@ -92,12 +112,19 @@ void trace(){}
 //works as the main function of this file
 //call init, open, load, execute and trace 
 void run(const char *filename){
+    FILE *out_file = fopen("out_file.txt", "w");
     printf("run has been called");
     open_file(filename);
     for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
-        instr_type t = instruction_type(memory.instrs[i]);
-        printf("%d", t);
+        //instr_type t = instruction_type(memory.instrs[i]);
+        //printf("%d", t);
+        bin_instr_t *ptr = &memory.instrs[i];
+        uintptr_t add = (uintptr_t)ptr;
+        unsigned int int_add = (unsigned int)add;
+        fprintf(out_file, "%d    ", i);
+        instruction_print(out_file, int_add, memory.instrs[i]);
     }
+    fclose(out_file);
 }
 
 //when given the "-p" flag, prints out the instructions as written
