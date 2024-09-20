@@ -6,6 +6,7 @@
 #include "instruction.h"
 #include "utilities.h"
 #include "machine.h"
+#include "bof.h"
 #include "machine_types.h"
 #include "disasm.h"
 
@@ -18,7 +19,6 @@ static union mem_u{
     uword_type uwords[MEMORY_SIZE_IN_WORDS];
     bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
 }memory;
-
 //VM Registers
 int registers[NUM_REGISTERS];
 int program_counter;
@@ -40,10 +40,42 @@ void initialize(){
 
 //open bof
 //should call load_instructions and close file when done
-void open_file(){}
+//Madigan 9/18
+char * open_file(const char *filename){
+
+    BOFFILE *f = malloc(sizeof(BOFFILE));
+    if (f == NULL) {
+    bail_with_error("Memory allocation failed");
+    }
+    f->filename = filename;
+    f->fileptr = fopen(filename, "rb");
+    if (f->fileptr == NULL) {
+    bail_with_error("Error opening file: %s", filename);
+    }
+
+    load_instructions(f);
+    //close file and handle errors
+    if(fclose(f->fileptr) != 0){
+        bail_with_error("Error closing file");
+    }
+
+    return f;
+}
 
 //read/decode and put instructions into memory
 //will probably use a lot from instructions file
+void load_instructions(BOFFILE *f){
+
+    int num_instr = 0;
+    while (num_instr >= MEMORY_SIZE_IN_WORDS) {
+        bin_instr_t instr = instruction_read(*f);
+        memory.instrs[num_instr] = instr;
+        num_instr++;
+    }
+
+    if(num_instr >= MEMORY_SIZE_IN_WORDS){
+        bail_with_error("instr array full");
+    }
 void load_instructions(){
     //perform invariant checks AFTER file is loaded
 }
@@ -61,6 +93,17 @@ void trace(){}
 //call init, open, load, execute and trace 
 void run(const char *filename){
     printf("run has been called");
+    open_file(filename);
+    for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
+        instr_type t = instruction_type(memory.instrs[i]);
+        printf("%d", t);
+    }
+}
+
+//when given the "-p" flag, prints out the instructions as written
+void print_command (){
+    const char *filename = open_file();
+    disasmProgram(stdout, filename);
 }
 
 //when given the "-p" flag, prints out the instructions as written
