@@ -33,15 +33,18 @@ void initialize(){
     //frame pointer is index 2
     //indices 3-6 are unndesignated
     //return address register is index 7
+
+    //these are throwing errors
+    /*
     registers = {0};
     program_counter = 0; 
     memory = {0};
+    */
 }
 
-//open bof
-//should call load_instructions and close file when done
+//open bof and return BOFFILE object
 //Madigan 9/18
-char * open_file(const char *filename){
+BOFFILE * open_file(const char *filename){
 
     BOFFILE *f = malloc(sizeof(BOFFILE));
     if (f == NULL) {
@@ -51,12 +54,6 @@ char * open_file(const char *filename){
     f->fileptr = fopen(f->filename, "rb");
     if (f->fileptr == NULL) {
     bail_with_error("Error opening file: %s", filename);
-    }
-
-    load_instructions(f);
-    //close file and handle errors
-    if(fclose(f->fileptr) != 0){
-        bail_with_error("Error closing file");
     }
 
     return f;
@@ -96,8 +93,6 @@ void load_instructions(BOFFILE *f){
     if(num_instr >= MEMORY_SIZE_IN_WORDS){
         bail_with_error("instr array full");
     }
-void load_instructions(){
-    //perform invariant checks AFTER file is loaded
 }
 
 //do what the instruction says
@@ -114,7 +109,8 @@ void trace(){}
 void run(const char *filename){
     FILE *out_file = fopen("out_file.txt", "w");
     printf("run has been called");
-    open_file(filename);
+    BOFFILE *f = open_file(filename);
+    load_instructions(f);
     for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
         //instr_type t = instruction_type(memory.instrs[i]);
         //printf("%d", t);
@@ -128,15 +124,9 @@ void run(const char *filename){
 }
 
 //when given the "-p" flag, prints out the instructions as written
-void print_command (){
-    const char *filename = open_file();
-    disasmProgram(stdout, filename);
-}
-
-//when given the "-p" flag, prints out the instructions as written
-void print_command (){
-    const char *filename = open_file();
-    disasmProgram(stdout, filename);
+void print_command (const char *filename){
+    BOFFILE *f = open_file(filename);
+    //disasmProgram(stdout, filename);
 }
 
 //prints the current state of the memory stack

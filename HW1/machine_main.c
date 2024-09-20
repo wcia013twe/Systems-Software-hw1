@@ -8,15 +8,16 @@
 int main(int argc, char *argv[])
 {
     extern void run(const char *filename);
-    extern void usage(const char *cmdname);
+    void usage(const char *cmdname);
     const char *command = argv[0];
 
     //if the second arg is the -p flag, print instructions
     if (strcmp(argv[1], "-p") == 0) {
 	    //print the instructions
 	    //use disasmProgram(stdout, BOFFILE name)
-    if (argv[1] == "-p") {
-	  print_command();
+
+        //commented out for compiling purposes
+        //print_command();
     }
     //if the number of arguments is eaxctly two, run instructions
     if(argc == 2){
