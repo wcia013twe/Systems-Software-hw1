@@ -9,9 +9,9 @@
 #include "bof.h"
 #include "machine_types.h"
 #include "disasm.h"
+#include "regname.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
-#define NUM_REGISTERS 8
 
 //memory array for the VM
 static union mem_u{
@@ -20,13 +20,12 @@ static union mem_u{
     bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
 }memory;
 //VM Registers
-int registers[NUM_REGISTERS];
+int GPR[NUM_REGISTERS];
 int program_counter;
 
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
-//#Caitlin
 void initialize(){
     //global pointer is index 0
     //stack pointer is index 1
@@ -36,7 +35,7 @@ void initialize(){
 
     //these are throwing errors
     /*
-    registers = {0};
+    GPR = {0};
     program_counter = 0; 
     memory = {0};
     */
@@ -98,7 +97,136 @@ void load_instructions(BOFFILE *f){
 //do what the instruction says
 //move fp, sp and pc as needed
 //will need extra stack management functions
-void execute(){}
+void execute(bin_instr.t bi){
+    //we'll probably need to open the file and load the instructions
+    //but that could also happen in the run
+    switch(instruction_type(bini)){
+       //Caitlin
+        case comp_instr_t:
+        {
+            comp_instr_t compi = bini.comp;
+            //look in enum for func0_code
+            switch(compi.func){
+                case NOP_F:
+                case ADD_F:
+                case SUB_F:
+                case CPW_F:
+                case AND_F:
+                case BOR_F:
+                case NOR_F:
+                case XOR_F:
+                case LWR_F:
+                case SWR_F:
+                case SCA_F:
+                case LWI_F:
+                case NEG_F:
+                default:
+                {
+                    bail_with_error("Illegal Comp Instruction");
+                    break;
+                }
+            }
+        }
+        //Benny
+        case other_comp_instr_t:
+        {
+            other_comp_instr_t othci = bini.othc;
+            //look in enum for func1_code
+            switch(othci.func){
+                case LIT_F:
+                case ARI_F:
+                case SRI_F:
+                case MUL_F:
+                case DIV_F:
+                case CFHI_F:
+                case CFLO_F:
+                case SLL_F:
+                case SRL_F:
+                case JMP_F:
+                case CSI_F:
+                case JREL_F:
+                case SYS_F:
+                default:
+                {
+                    bail_with_error("Illegal Other Comp Instruction");
+                    break;
+                }
+            }
+        }
+        //Madigan
+        case syscall_instr_t:
+        {
+            syscall_instr_t syscalli = bini.syscall;
+            //look in enum for syscall_type
+            switch(syscalli.func){
+                case print_char_sc:
+                case read_char_sc:
+                case start_tracing_sc:
+                case stop_tracing_sc:
+                default:
+                {
+                    bail_with_error("Illegal Syscall Instruction");
+                    break;
+                }
+            }
+        }
+
+        //Wesley
+        case immed_instr_t:
+        {
+            immed_instr_t immedi = bini.immed;
+            //look in enum for opcodes
+            switch(immedi.func){
+                case ADDI_O:
+                case BEQ_O:
+                case BGEZ_0:
+                case BGTZ_O:
+                case BLEZ_O:
+                case BLTZ_O:
+                case BNE_O:
+                default:
+                {
+                    bail_with_error("Illegal Immediate Instruction");
+                    break;
+                }
+            }
+        }
+
+        //Wesley
+        case uimmed_instr_t:
+        {
+            uimmed_instr_t uimmedi = bini.uimmed;
+            //look in enum for opcodes
+            switch(uimmedi.func){
+                case ANDI_O:
+                case BORI_O:
+                case NORI_O:
+                case XORI_O:
+                default:
+                {
+                    bail_with_error("Illegal Unsigned Immediate Instruction");
+                    break;
+                }
+            }
+        }
+
+        //Benny
+        case jump_instr_t:
+        {
+            jump_instr_t jumpi = bini.jump;
+            //look in enum for opcodes
+            switch(jump.func){
+                case JMPA_O:
+                case CALL_O:
+                case RTN_O:
+                default:
+                {
+                    bail_with_error("Illegal Jump Instruction");
+                    break;
+                }
+            }
+        }
+}
 
 //prints stack trace after each instruction
 void trace(){}
@@ -126,7 +254,8 @@ void run(const char *filename){
 //when given the "-p" flag, prints out the instructions as written
 void print_command (const char *filename){
     BOFFILE *f = open_file(filename);
-    //disasmProgram(stdout, filename);
+    load_instructions(f);
+    disasmProgram(stdout, f);
 }
 
 //prints the current state of the memory stack
