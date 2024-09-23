@@ -12,7 +12,6 @@
 #include "regname.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
-#define NUM_REGISTERS 32
 
 //memory array for the VM
 static union mem_u{
@@ -21,10 +20,6 @@ static union mem_u{
     bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
 }memory;
 
-// general purpose registers
-static union gpr_u {
-    word_type words[NUM_REGISTERS];
-} GPR;
 //VM Registers
 int GPR[NUM_REGISTERS];
 int program_counter;
