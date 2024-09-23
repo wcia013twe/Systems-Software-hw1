@@ -12,6 +12,7 @@
 #include "regname.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
+#define NUM_REGISTERS 32
 
 //memory array for the VM
 static union mem_u{
@@ -19,6 +20,11 @@ static union mem_u{
     uword_type uwords[MEMORY_SIZE_IN_WORDS];
     bin_instr_t instrs[MEMORY_SIZE_IN_WORDS];
 }memory;
+
+// general purpose registers
+static union gpr_u {
+    word_type words[NUM_REGISTERS];
+} GPR;
 //VM Registers
 int GPR[NUM_REGISTERS];
 int program_counter;
@@ -97,14 +103,14 @@ void load_instructions(BOFFILE *f){
 //do what the instruction says
 //move fp, sp and pc as needed
 //will need extra stack management functions
-void execute(bin_instr.t bi){
+void execute(bin_instr_t bi){
     //we'll probably need to open the file and load the instructions
     //but that could also happen in the run
-    switch(instruction_type(bini)){
+    switch(instruction_type(bi)){
        //Caitlin
-        case comp_instr_t:
+        case comp_instr_type:
         {
-            comp_instr_t compi = bini.comp;
+            comp_instr_t compi = bi.comp;
             //look in enum for func0_code
             switch(compi.func){
                 case NOP_F:
@@ -128,9 +134,9 @@ void execute(bin_instr.t bi){
             }
         }
         //Benny
-        case other_comp_instr_t:
+        case other_comp_instr_type:
         {
-            other_comp_instr_t othci = bini.othc;
+            other_comp_instr_t othci = bi.othc;
             //look in enum for func1_code
             switch(othci.func){
                 case LIT_F:
@@ -154,9 +160,9 @@ void execute(bin_instr.t bi){
             }
         }
         //Madigan
-        case syscall_instr_t:
+        case syscall_instr_type:
         {
-            syscall_instr_t syscalli = bini.syscall;
+            syscall_instr_t syscalli = bi.syscall;
             //look in enum for syscall_type
             switch(syscalli.func){
                 case print_char_sc:
@@ -172,14 +178,14 @@ void execute(bin_instr.t bi){
         }
 
         //Wesley
-        case immed_instr_t:
+        case immed_instr_type:
         {
-            immed_instr_t immedi = bini.immed;
+            immed_instr_t immedi = bi.immed;
             //look in enum for opcodes
-            switch(immedi.func){
+            switch(immedi.op){
                 case ADDI_O:
                 case BEQ_O:
-                case BGEZ_0:
+                case BGEZ_O:
                 case BGTZ_O:
                 case BLEZ_O:
                 case BLTZ_O:
@@ -192,12 +198,13 @@ void execute(bin_instr.t bi){
             }
         }
 
+/* Not something instruction_type() can return, probably a professor problem
         //Wesley
-        case uimmed_instr_t:
+        case uimmed_instr_type:
         {
-            uimmed_instr_t uimmedi = bini.uimmed;
+            uimmed_instr_t uimmed = bi.uimmed;
             //look in enum for opcodes
-            switch(uimmedi.func){
+            switch(uimmed.op){
                 case ANDI_O:
                 case BORI_O:
                 case NORI_O:
@@ -209,13 +216,14 @@ void execute(bin_instr.t bi){
                 }
             }
         }
+*/
 
         //Benny
-        case jump_instr_t:
+        case jump_instr_type:
         {
-            jump_instr_t jumpi = bini.jump;
+            jump_instr_t jump = bi.jump;
             //look in enum for opcodes
-            switch(jump.func){
+            switch(jump.op){
                 case JMPA_O:
                 case CALL_O:
                 case RTN_O:
@@ -226,6 +234,13 @@ void execute(bin_instr.t bi){
                 }
             }
         }
+
+        case error_instr_type:
+        {
+            bail_with_error("Illegal Instruction Type");
+            break;
+        }
+    }
 }
 
 //prints stack trace after each instruction
@@ -255,7 +270,7 @@ void run(const char *filename){
 void print_command (const char *filename){
     BOFFILE *f = open_file(filename);
     load_instructions(f);
-    disasmProgram(stdout, f);
+    disasmProgram(stdout, *f);
 }
 
 //prints the current state of the memory stack
