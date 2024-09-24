@@ -178,7 +178,13 @@ void execute(bin_instr_t bi){
             immed_instr_t immedi = bi.immed;
             //look in enum for opcodes
             switch(immedi.op){
+                case COMP_O:
+                case OTHC_O:
                 case ADDI_O:
+                case ANDI_O:
+                case BORI_O:
+                case NORI_O:
+                case XORI_O:
                 case BEQ_O:
                 case BGEZ_O:
                 case BGTZ_O:
@@ -192,26 +198,6 @@ void execute(bin_instr_t bi){
                 }
             }
         }
-
-/* Not something instruction_type() can return, probably a professor problem
-        //Wesley
-        case uimmed_instr_type:
-        {
-            uimmed_instr_t uimmed = bi.uimmed;
-            //look in enum for opcodes
-            switch(uimmed.op){
-                case ANDI_O:
-                case BORI_O:
-                case NORI_O:
-                case XORI_O:
-                default:
-                {
-                    bail_with_error("Illegal Unsigned Immediate Instruction");
-                    break;
-                }
-            }
-        }
-*/
 
         //Benny
         case jump_instr_type:
