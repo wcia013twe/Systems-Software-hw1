@@ -111,40 +111,40 @@ void execute(bin_instr_t bi){
                 case NOP_F:
                     break;
                 case ADD_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[1]] + memory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[1]] + memory.words[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case SUB_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[1]] - memory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[1]] - memory.words[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case CPW_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case AND_F:
-                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] & umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] & memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case BOR_F:
-                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] | umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case NOR_F:
-                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = ~(umemory[GPR[1]] | umemory[GPR[compi.rs] + formOffset(compi.os)]);
+                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = ~(memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + formOffset(compi.os)]);
                     break;
                 case XOR_F:
-                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] ^ umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] ^ memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case LWR_F:
-                    GPR[compi.rt] = memory[GPR[compi.rs] + formOffset(compi.os)];
+                    GPR[compi.rt] = memory.words[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 case SWR_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs];
                     break;
                 case SCA_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs] + formOffset(compi.os);
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs] + formOffset(compi.os);
                     break;
                 case LWI_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[memory[GPR[compi.rs] +formOffset(compi.os)]];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[memory.words[GPR[compi.rs] +formOffset(compi.os)]];
                     break;
                 case NEG_F:
-                    memory[GPR[compi.rt] + formOffset(compi.ot)] = ~memory[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = ~memory.words[GPR[compi.rs] + formOffset(compi.os)];
                     break;
                 default:
                     bail_with_error("Illegal Comp Instruction");
