@@ -24,6 +24,10 @@ static union mem_u{
 int GPR[NUM_REGISTERS];
 int program_counter;
 
+//Data Dictionary
+int HI = 0;
+int LO = 0;
+
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
@@ -40,7 +44,56 @@ void initialize(){
     program_counter = 0; 
     memory = {0};
     */
+
+    //Benny - I think this should fix these inititializations
+    //GPR initializations
+    for (int i = 0; i < NUM_REGISTERS; i++)
+        GPR[i] = 0;
+
+    //PC Initializations
+    program_counter = 0;
+
+    //Memory Structure Initialization
+    
+        //Blank Initialized bin_instr_t
+        bin_instr_t blankInstr;
+
+        blankInstr.comp = (comp_instr_t){0};
+        blankInstr->othc = (other_comp_instr_t){0};
+        blankInstr->syscall = (syscall_instr_t){0};
+        blankInstr->immed = (immed_instr_t){0};
+        blankInstr->uimmed = (uimmed_instr_t){0};
+        blankInstr->jump = (jump_instr_t){0};
+
+    for (int i = 0; i < MEMORY_SIZE_IN_WORDS; i++) {
+        memory.words[i] = 0;
+        memory.uwords[i] = 0;
+        memory.instrs[i] = blankInstr;
+    }
+
+    //Open the file
+    BOFFILE *bof = open_file(argv[1]);
+
+    BOFHeader header = bof_read_header(*bof);
+
+    //The starting address of the code is the initial value of the program counter (PC).
+    program_counter = header.text_start_address;
+
+    //Init GP to start of data
+    GPR[GP] = header.data_start_address;
+
+    //The starting address of the data section is the address of the first element of the data section and the initial value of the $gp register
+    GPR[SP] = header.stack_bottom_addr;
+    GPR[FP] = header.stack_bottom_addr;
+
+    load_instructions(bof);
+
+    bof_close(*bof);
+    free(bof);
+    
 }
+
+
 
 //open bof and return BOFFILE object
 //Madigan 9/18
@@ -135,18 +188,70 @@ void execute(bin_instr_t bi){
             //look in enum for func1_code
             switch(othci.func){
                 case LIT_F:
+                    memory[GPR[othci.reg] + formOffset(othci.offset)] = sgnExt(othci.arg);
+                    break;
+
                 case ARI_F:
+                    GPR[othci.reg] = (GPR[otchi.reg] + sgnExt(otchi.arg));
+                    break;
+
                 case SRI_F:
+                    GPR[othci.reg] = (GPR[otchi.reg] - sgnExt(otchi.arg));
+                    break;
+
                 case MUL_F:
+                    int stack_top = memory[GPR[SP]];
+                    int memory_value = memory[GPR[othci.reg] + formOffset(othci.offset)];
+
+                    int result = memory_value * stack_top;
+
+                    HI = (result >> 32); //HI 32 Bits
+                    LO = (result & 0xFFFFFFFF); //Low 32 Bits
+
+                    break;
+
                 case DIV_F:
+                    //Remainder
+                    HI = memory[GPR[SP]] % (memory[GPR[othci.reg] + formOffset(othci.offset)]);
+
+                    //Quotient
+                    LO = memory[GPR[SP]] / (memory[GPR[othci.reg] + formOffset(othci.offset)]);
+
+                    break;
+
                 case CFHI_F:
+                    memory[GPR[othci.reg] + formOffset(othci.offset)] = HI;
+                    break;
+
                 case CFLO_F:
+                    memory[GPR[othci.reg] + formOffset(othci.offset)] = LO;
+                    break;
+
                 case SLL_F:
+                    memory[GPR[othci.reg] + formOffset(othci.offset)] = memory[GPR[SP]] << othci.arg;
+                    break;
+
                 case SRL_F:
+                    memory[GPR[othci.reg] + formOffset(othci.offset)] = memory[GPR[SP]] >> othci.arg;
+                    break;
+
                 case JMP_F:
+                    program_counter = memory[GPR[othci.reg] + formOffset(othci.offset)];
+                    break;
+
                 case CSI_F:
+                    GPR[RA] = program_counter;
+                    program_counter = memory[GPR[othci.reg] + formOffset(othci.offset)];
+                    break;
+
                 case JREL_F:
+                    program_counter = ((program_counter - 1) + formOffset(othci.offset));
+
+
                 case SYS_F:
+
+
+
                 default:
                 {
                     bail_with_error("Illegal Other Comp Instruction");
