@@ -34,12 +34,12 @@ void initialize(){
     //indices 3-6 are unndesignated
     //return address register is index 7
 
-    //these are throwing errors
-    /*
+    //these were throwing errors, please test corrected version
     GPR = {0};
     program_counter = 0; 
-    memory = {0};
-    */
+    memory.words = {0};
+    memory.uwords = {0};
+    memory.instrs = {0};
 }
 
 //open bof and return BOFFILE object
@@ -109,25 +109,48 @@ void execute(bin_instr_t bi){
             //look in enum for func0_code
             switch(compi.func){
                 case NOP_F:
+                    break;
                 case ADD_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[1]] + memory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case SUB_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[1]] - memory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case CPW_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case AND_F:
+                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] & umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case BOR_F:
+                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] | umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case NOR_F:
+                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = ~(umemory[GPR[1]] | umemory[GPR[compi.rs] + formOffset(compi.os)]);
+                    break;
                 case XOR_F:
+                    umemory[GPR[compi.rt] + formOffset(compi.ot)] = umemory[GPR[1]] ^ umemory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case LWR_F:
+                    GPR[compi.rt] = memory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 case SWR_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs];
+                    break;
                 case SCA_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs] + formOffset(compi.os);
+                    break;
                 case LWI_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = memory[memory[GPR[compi.rs] +formOffset(compi.os)]];
+                    break;
                 case NEG_F:
+                    memory[GPR[compi.rt] + formOffset(compi.ot)] = ~memory[GPR[compi.rs] + formOffset(compi.os)];
+                    break;
                 default:
-                {
                     bail_with_error("Illegal Comp Instruction");
                     break;
-                }
             }
-        }
+        }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
         {
