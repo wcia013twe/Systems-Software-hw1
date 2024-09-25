@@ -207,7 +207,7 @@ void execute(bin_instr_t bi){
                     int64_t result = memory_value * stack_top;
 
                     HI = (result >> 32); //HI 32 Bits
-                    LO = (result & 0x0000FFFF); //Low 32 Bits
+                    LO = (result & 0xFFFFFFFF); //Low 32 Bits
 
                     break;
 
