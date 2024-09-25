@@ -46,7 +46,7 @@ void initialize(){
     memory = {0};
     */
 
-    //Benny - I think this should fix these inititializations
+    //Benny 9/24- I think this should fix these inititializations
     //GPR initializations
     for (int i = 0; i < NUM_REGISTERS; i++)
         GPR[i] = 0;
@@ -182,7 +182,7 @@ void execute(bin_instr_t bi){
                 }
             }
         }
-        //Benny
+        //Benny 9/24-25
         case other_comp_instr_type:
         {
             other_comp_instr_t othci = bi.othc;
@@ -247,7 +247,7 @@ void execute(bin_instr_t bi){
 
                 case JREL_F:
                     program_counter = ((program_counter - 1) + machine_types_formOffset(othci.offset));
-
+                    break;
 
                 case SYS_F:
 
@@ -312,8 +312,18 @@ void execute(bin_instr_t bi){
             //look in enum for opcodes
             switch(jump.op){
                 case JMPA_O:
+                    program_counter = machine_types_formAddress(program_counter - 1, jump.addr);
+                    break;
+
                 case CALL_O:
+                    GPR[RA] = program_counter;
+                    program_counter = machine_types_formAddress(program_counter - 1, jump.addr);
+                    break;
+
                 case RTN_O:
+                    program_counter = GPR[RA];
+                    break;
+
                 default:
                 {
                     bail_with_error("Illegal Jump Instruction");
