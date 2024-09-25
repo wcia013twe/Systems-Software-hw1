@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <assert.h>
 #include <stdarg.h>
 #include "instruction.h"
@@ -25,8 +26,8 @@ int GPR[NUM_REGISTERS];
 int program_counter;
 
 //Data Dictionary
-int HI = 0;
-int LO = 0;
+int32_t HI = 0;
+int32_t LO = 0;
 
 //initialize the VM
 //set initial values for fp, sp, pc
@@ -54,16 +55,16 @@ void initialize(){
     program_counter = 0;
 
     //Memory Structure Initialization
-    
+
         //Blank Initialized bin_instr_t
         bin_instr_t blankInstr;
 
         blankInstr.comp = (comp_instr_t){0};
-        blankInstr->othc = (other_comp_instr_t){0};
-        blankInstr->syscall = (syscall_instr_t){0};
-        blankInstr->immed = (immed_instr_t){0};
-        blankInstr->uimmed = (uimmed_instr_t){0};
-        blankInstr->jump = (jump_instr_t){0};
+        blankInstr.othc = (other_comp_instr_t){0};
+        blankInstr.syscall = (syscall_instr_t){0};
+        blankInstr.immed = (immed_instr_t){0};
+        blankInstr.uimmed = (uimmed_instr_t){0};
+        blankInstr.jump = (jump_instr_t){0};
 
     for (int i = 0; i < MEMORY_SIZE_IN_WORDS; i++) {
         memory.words[i] = 0;
@@ -72,9 +73,9 @@ void initialize(){
     }
 
     //Open the file
-    BOFFILE *bof = open_file(argv[1]);
+    BOFFILE bof = bof_read_open(rename);
 
-    BOFHeader header = bof_read_header(*bof);
+    BOFHeader header = bof_read_header(bof);
 
     //The starting address of the code is the initial value of the program counter (PC).
     program_counter = header.text_start_address;
@@ -86,10 +87,10 @@ void initialize(){
     GPR[SP] = header.stack_bottom_addr;
     GPR[FP] = header.stack_bottom_addr;
 
-    load_instructions(bof);
+    load_instructions(&bof);
 
-    bof_close(*bof);
-    free(bof);
+    bof_close(bof);
+    // free(bof); not needed for non-pointer
     
 }
 
@@ -188,64 +189,64 @@ void execute(bin_instr_t bi){
             //look in enum for func1_code
             switch(othci.func){
                 case LIT_F:
-                    memory[GPR[othci.reg] + formOffset(othci.offset)] = sgnExt(othci.arg);
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = machine_types_sgnExt(othci.arg);
                     break;
 
                 case ARI_F:
-                    GPR[othci.reg] = (GPR[otchi.reg] + sgnExt(otchi.arg));
+                    GPR[othci.reg] = (GPR[othci.reg] + machine_types_sgnExt(othci.arg));
                     break;
 
                 case SRI_F:
-                    GPR[othci.reg] = (GPR[otchi.reg] - sgnExt(otchi.arg));
+                    GPR[othci.reg] = (GPR[othci.reg] - machine_types_sgnExt(othci.arg));
                     break;
 
                 case MUL_F:
-                    int stack_top = memory[GPR[SP]];
-                    int memory_value = memory[GPR[othci.reg] + formOffset(othci.offset)];
+                    int32_t stack_top = memory.words[GPR[SP]];
+                    int32_t memory_value = memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
 
-                    int result = memory_value * stack_top;
+                    int64_t result = memory_value * stack_top;
 
                     HI = (result >> 32); //HI 32 Bits
-                    LO = (result & 0xFFFFFFFF); //Low 32 Bits
+                    LO = (result & 0x0000FFFF); //Low 32 Bits
 
                     break;
 
                 case DIV_F:
                     //Remainder
-                    HI = memory[GPR[SP]] % (memory[GPR[othci.reg] + formOffset(othci.offset)]);
+                    HI = memory.words[GPR[SP]] % (memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)]);
 
                     //Quotient
-                    LO = memory[GPR[SP]] / (memory[GPR[othci.reg] + formOffset(othci.offset)]);
+                    LO = memory.words[GPR[SP]] / (memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)]);
 
                     break;
 
                 case CFHI_F:
-                    memory[GPR[othci.reg] + formOffset(othci.offset)] = HI;
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = HI;
                     break;
 
                 case CFLO_F:
-                    memory[GPR[othci.reg] + formOffset(othci.offset)] = LO;
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = LO;
                     break;
 
                 case SLL_F:
-                    memory[GPR[othci.reg] + formOffset(othci.offset)] = memory[GPR[SP]] << othci.arg;
+                    memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = memory.uwords[GPR[SP]] << othci.arg;
                     break;
 
                 case SRL_F:
-                    memory[GPR[othci.reg] + formOffset(othci.offset)] = memory[GPR[SP]] >> othci.arg;
+                    memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = memory.uwords[GPR[SP]] >> othci.arg;
                     break;
 
                 case JMP_F:
-                    program_counter = memory[GPR[othci.reg] + formOffset(othci.offset)];
+                    program_counter = memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
                     break;
 
                 case CSI_F:
                     GPR[RA] = program_counter;
-                    program_counter = memory[GPR[othci.reg] + formOffset(othci.offset)];
+                    program_counter = memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
                     break;
 
                 case JREL_F:
-                    program_counter = ((program_counter - 1) + formOffset(othci.offset));
+                    program_counter = ((program_counter - 1) + machine_types_formOffset(othci.offset));
 
 
                 case SYS_F:
