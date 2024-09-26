@@ -322,8 +322,8 @@ void execute(bin_instr_t bi){
             immed_instr_t immedi = bi.immed;
             //look in enum for opcodes
             switch(immedi.op){
-                case COMP_O:
-                case OTHC_O:
+                // case COMP_O:
+                // case OTHC_O:
                 case ADDI_O:
                     // ADD immediate:
                     // memory[GPR[r] + formOffset(o)]
