@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <assert.h>
 #include <stdarg.h>
 #include "instruction.h"
@@ -24,6 +25,10 @@ static union mem_u{
 int GPR[NUM_REGISTERS];
 int program_counter;
 
+//Data Dictionary
+int32_t HI = 0;
+int32_t LO = 0;
+
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
@@ -40,7 +45,56 @@ void initialize(){
     program_counter = 0; 
     memory = {0};
     */
+
+    //Benny 9/24- I think this should fix these inititializations
+    //GPR initializations
+    for (int i = 0; i < NUM_REGISTERS; i++)
+        GPR[i] = 0;
+
+    //PC Initializations
+    program_counter = 0;
+
+    //Memory Structure Initialization
+
+        //Blank Initialized bin_instr_t
+        bin_instr_t blankInstr;
+
+        blankInstr.comp = (comp_instr_t){0};
+        blankInstr.othc = (other_comp_instr_t){0};
+        blankInstr.syscall = (syscall_instr_t){0};
+        blankInstr.immed = (immed_instr_t){0};
+        blankInstr.uimmed = (uimmed_instr_t){0};
+        blankInstr.jump = (jump_instr_t){0};
+
+    for (int i = 0; i < MEMORY_SIZE_IN_WORDS; i++) {
+        memory.words[i] = 0;
+        memory.uwords[i] = 0;
+        memory.instrs[i] = blankInstr;
+    }
+
+    //Open the file
+    BOFFILE bof = bof_read_open(rename);
+
+    BOFHeader header = bof_read_header(bof);
+
+    //The starting address of the code is the initial value of the program counter (PC).
+    program_counter = header.text_start_address;
+
+    //Init GP to start of data
+    GPR[GP] = header.data_start_address;
+
+    //The starting address of the data section is the address of the first element of the data section and the initial value of the $gp register
+    GPR[SP] = header.stack_bottom_addr;
+    GPR[FP] = header.stack_bottom_addr;
+
+    load_instructions(&bof);
+
+    bof_close(bof);
+    // free(bof); not needed for non-pointer
+    
 }
+
+
 
 //open bof and return BOFFILE object
 //Madigan 9/18
@@ -128,25 +182,77 @@ void execute(bin_instr_t bi){
                 }
             }
         }
-        //Benny
+        //Benny 9/24-25
         case other_comp_instr_type:
         {
             other_comp_instr_t othci = bi.othc;
             //look in enum for func1_code
             switch(othci.func){
                 case LIT_F:
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = machine_types_sgnExt(othci.arg);
+                    break;
+
                 case ARI_F:
+                    GPR[othci.reg] = (GPR[othci.reg] + machine_types_sgnExt(othci.arg));
+                    break;
+
                 case SRI_F:
+                    GPR[othci.reg] = (GPR[othci.reg] - machine_types_sgnExt(othci.arg));
+                    break;
+
                 case MUL_F:
+                    int32_t stack_top = memory.words[GPR[SP]];
+                    int32_t memory_value = memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
+
+                    int64_t result = memory_value * stack_top;
+
+                    HI = (result >> 32); //HI 32 Bits
+                    LO = (result & 0xFFFFFFFF); //Low 32 Bits
+
+                    break;
+
                 case DIV_F:
+                    //Remainder
+                    HI = memory.words[GPR[SP]] % (memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)]);
+
+                    //Quotient
+                    LO = memory.words[GPR[SP]] / (memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)]);
+
+                    break;
+
                 case CFHI_F:
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = HI;
+                    break;
+
                 case CFLO_F:
+                    memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = LO;
+                    break;
+
                 case SLL_F:
+                    memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = memory.uwords[GPR[SP]] << othci.arg;
+                    break;
+
                 case SRL_F:
+                    memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = memory.uwords[GPR[SP]] >> othci.arg;
+                    break;
+
                 case JMP_F:
+                    program_counter = memory.uwords[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
+                    break;
+
                 case CSI_F:
+                    GPR[RA] = program_counter;
+                    program_counter = memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)];
+                    break;
+
                 case JREL_F:
+                    program_counter = ((program_counter - 1) + machine_types_formOffset(othci.offset));
+                    break;
+
                 case SYS_F:
+
+
+
                 default:
                 {
                     bail_with_error("Illegal Other Comp Instruction");
@@ -206,8 +312,18 @@ void execute(bin_instr_t bi){
             //look in enum for opcodes
             switch(jump.op){
                 case JMPA_O:
+                    program_counter = machine_types_formAddress(program_counter - 1, jump.addr);
+                    break;
+
                 case CALL_O:
+                    GPR[RA] = program_counter;
+                    program_counter = machine_types_formAddress(program_counter - 1, jump.addr);
+                    break;
+
                 case RTN_O:
+                    program_counter = GPR[RA];
+                    break;
+
                 default:
                 {
                     bail_with_error("Illegal Jump Instruction");
