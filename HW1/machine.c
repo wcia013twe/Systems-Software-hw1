@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string.h>
 #include "instruction.h"
 #include "utilities.h"
 #include "machine.h"
@@ -43,10 +44,13 @@ void initialize(){
     memory.words = {0};
     memory.uwords = {0};
     memory.instrs = {0};
+
+    //Benny Comment 9-25 : initialization incorrect but not needed to be changed since already finalized (hopefully) on my branch.
 }
 
 //open bof and return BOFFILE object
 //Madigan 9/18
+//Benny Comment 9-25 : function is not needed as "bof_read_open" is provided in BOF.h and BOF.c file
 BOFFILE * open_file(const char *filename){
 
     BOFFILE *f = malloc(sizeof(BOFFILE));
@@ -114,40 +118,42 @@ void execute(bin_instr_t bi){
                 case NOP_F:
                     break;
                 case ADD_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[1]] + memory.words[GPR[compi.rs] + formOffset(compi.os)];
+                    //Benny Comment 9-25 : changed all "formOffset" to "machine_types_formOffset" (easy to mistake function)
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[GPR[1]] + memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case SUB_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[1]] - memory.words[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[GPR[1]] - memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case CPW_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case AND_F:
-                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] & memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.uwords[GPR[1]] & memory.uwords[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case BOR_F:
-                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case NOR_F:
-                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = ~(memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + formOffset(compi.os)]);
+                    memory.uwords[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = ~(memory.uwords[GPR[1]] | memory.uwords[GPR[compi.rs] + machine_types_formOffset(compi.os)]);
                     break;
                 case XOR_F:
-                    memory.uwords[GPR[compi.rt] + formOffset(compi.ot)] = memory.uwords[GPR[1]] ^ memory.uwords[GPR[compi.rs] + formOffset(compi.os)];
+                    memory.uwords[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.uwords[GPR[1]] ^ memory.uwords[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case LWR_F:
-                    GPR[compi.rt] = memory.words[GPR[compi.rs] + formOffset(compi.os)];
+                    GPR[compi.rt] = memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case SWR_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs];
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = GPR[compi.rs];
                     break;
                 case SCA_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = GPR[compi.rs] + formOffset(compi.os);
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = GPR[compi.rs] + machine_types_formOffset(compi.os);
                     break;
                 case LWI_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = memory.words[memory.words[GPR[compi.rs] +formOffset(compi.os)]];
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[memory.words[GPR[compi.rs] +machine_types_formOffset(compi.os)]];
                     break;
                 case NEG_F:
-                    memory.words[GPR[compi.rt] + formOffset(compi.ot)] = ~memory.words[GPR[compi.rs] + formOffset(compi.os)];
+                    // Benny Comment 9-25 : unsure of use of ~, shouldnt this be a - or a -1 * memory.uwords[GPR[compi.rs]]?
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = ~memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 default:
                     bail_with_error("Illegal Comp Instruction");
@@ -288,9 +294,11 @@ void print_state(){
 
         char printString[MAX_STRING_LENGTH];
     char tempString[32];//need to check and make sure this makes sense
-    //trying to avoid DMA shenanigans
+    //trying to avoid DMA shenanigans1
 
     //trace header, one per instruction
+    //Benny Comment 9-25 : instr_count not specified anywhere else except for set to 0 at top of file. Where does it increase?
+    //Benny Comment 9-25 : instr could be collected from instructionType if passed to function here.
     if(instr_count != 0) printf("\n==>\t %d: %s\n", instr_count, instr);
     printf("      PC: %d", program_counter);
     if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
@@ -321,6 +329,8 @@ void print_state(){
             int tempIndex = 0;
             //fills in 8 indices of the printString preceding ':'
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
+                //Benny Comment 9-25 : bad practice to use strlen() in a loop header (it calls the function every time the loop runs)
+                //Benny Comment 9-25 : will not be an issue nor affect our runtime, just thought id be more nitpicky :D <3
                 if(index < TAB_LENGTH - strlen(tempString))
                     printString[index] = ' ';
                 else {
@@ -387,5 +397,7 @@ void print_state(){
         }
         printf("%s\n", printString);
     }
+
+    //Benny Comment 9-25 : i see instr_count increasing here but its being checked != 0 above before any changes are able to be made. unsure of logic
     instr_count++;
 }//end of print_state
