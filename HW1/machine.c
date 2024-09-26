@@ -108,7 +108,6 @@ void execute(bin_instr_t bi){
     //we'll probably need to open the file and load the instructions
     //but that could also happen in the run
     switch(instruction_type(bi)){
-       //Caitlin
         case comp_instr_type:
         {
             comp_instr_t compi = bi.comp;
@@ -117,7 +116,6 @@ void execute(bin_instr_t bi){
                 case NOP_F:
                     break;
                 case ADD_F:
-                    //Benny Comment 9-25 : changed all "formOffset" to "machine_types_formOffset" (easy to mistake function)
                     memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[GPR[1]] + memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case SUB_F:
