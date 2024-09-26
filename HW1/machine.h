@@ -9,8 +9,8 @@
 //run the vm on the given file
 extern void run(const char *filename);
 
-//prints the state of the memory stack for debugging
-extern void print_state();
+//prints the instructions provided without executing
+void print_command (const char *filename);
 
 void load_instructions(BOFFILE *f);
 #endif
