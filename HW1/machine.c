@@ -498,7 +498,7 @@ void run(const char *filename){
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
-    BOFFILEHeader bf_header = bof_read_header(bf);
+    BOFHeader bf_header = bof_read_header(bf);
 
     //Initializing
     initialize(bf);
