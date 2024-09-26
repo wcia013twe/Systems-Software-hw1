@@ -9,7 +9,7 @@
 
 // to turn off debugging support (assertions and debug_print)
 // define the symbol NDEBUG (by writing uncommenting the following)
-// #define NDEBUG
+//#define NDEBUG
 
 #ifdef NDEBUG
 #define debug_print() ((void)0)

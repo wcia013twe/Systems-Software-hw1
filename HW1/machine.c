@@ -11,10 +11,12 @@
 #include "machine_types.h"
 #include "disasm.h"
 #include "regname.h"
+#include "string.h"
 
 #define MEMORY_SIZE_IN_WORDS 32768
 
 //memory array for the VM
+//the data is shared in a union
 static union mem_u{
     word_type words[MEMORY_SIZE_IN_WORDS];
     uword_type uwords[MEMORY_SIZE_IN_WORDS];
@@ -98,20 +100,31 @@ void initialize(BOFFILE bf){
 
 //open bof and return BOFFILE object
 //Madigan 9/18
-BOFFILE * open_file(const char *filename){
+// BOFFILE * open_file(const char *filename){
 
-    BOFFILE *f = malloc(sizeof(BOFFILE));
-    if (f == NULL) {
-    bail_with_error("Memory allocation failed");
-    }
-    f->filename = filename;
-    f->fileptr = fopen(f->filename, "rb");
-    if (f->fileptr == NULL) {
-    bail_with_error("Error opening file: %s", filename);
-    }
+//     BOFFILE *f = malloc(sizeof(BOFFILE));
+//     if (f == NULL) {
+//     bail_with_error("Memory allocation failed");
+//     }
+//     f->filename = filename;
+//     f->fileptr = fopen(f->filename, "rb");
+//     if (f->fileptr == NULL) {
+//     bail_with_error("Error opening file: %s", filename);
+//     }
 
-    return f;
-}
+//     return f;
+// }
+
+// BOFFILE *open_file(const char *filename) {
+//     BOFFILE *bof = malloc(sizeof(BOFFILE));
+//     *bof = bof_read_open(filename);
+//     if (bof == NULL) {
+//         bail_with_error("Memory allocation failed");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     return bof;
+// }
 
 //read/decode and put instructions into memory
 //will probably use a lot from instructions file
@@ -122,16 +135,23 @@ void load_instructions(BOFFILE *f){
     if(f->fileptr == NULL){
         printf("fileptr null");
     }
+
     if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
         printf("file pointer not at beginning");
     }
 
-    int num_instr = 0;
-    fseek(f->fileptr,0,SEEK_END); //move ptr to end
-    int end = ftell(f->fileptr); //tell me where the ptr is
+    BOFHeader header = bof_read_header(*f);
 
-    fseek(f->fileptr, 0, SEEK_SET); //move ptr back to beginning
-    while (num_instr <= MEMORY_SIZE_IN_WORDS) {
+    if(!bof_has_correct_magic_number(header)){
+        bail_with_error("Invalid magic number");
+    }
+
+    int num_instr = 0;
+    //instead of moving the pointer to the end and then getting size, we can just use the
+    //bof.h function bof_at_eof that returns true when at the end
+
+    //while not at the end and number of instructions did not exceed memory
+    while (!bof_at_eof(*f) && num_instr <= MEMORY_SIZE_IN_WORDS) {
         printf("%d", num_instr);
         if(ftell(f->fileptr) == end){
             printf("\nReached the end of the file");
@@ -144,14 +164,31 @@ void load_instructions(BOFFILE *f){
         num_instr++;
     }
 
+    //too many instructions
     if(num_instr >= MEMORY_SIZE_IN_WORDS){
         bail_with_error("instr array full");
     }
+    
+    printf("Reached the end of the file");
 }
 
 //do what the instruction says
 //move fp, sp and pc as needed
-//will need extra stack management functions
+//will need extra stack management functionsk
+void push(word_type value) {
+    if (GPR[SP] >= MEMORY_SIZE_IN_WORDS) {
+        bail_with_error("Stack overflow");
+    }
+    memory.words[GPR[SP]++] = value;
+}
+
+word_type pop() {
+    if (GPR[SP] <= 0) {
+        bail_with_error("Stack underflow");
+    }
+    return memory.words[--GPR[SP]];
+}
+
 void execute(bin_instr_t bi){
 
     //we'll probably need to open the file and load the instructions
@@ -288,16 +325,127 @@ void execute(bin_instr_t bi){
                 case COMP_O:
                 case OTHC_O:
                 case ADDI_O:
+                    // ADD immediate:
+                    // memory[GPR[r] + formOffset(o)]
+                    // ←(memory[GPR[r] + formOffset(o)]) + sgnExt(i)
+                    {
+                        word_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
+                        memory.words[address] += machine_types_sgnExt(immedi.immed);
+                        break;
+                    }
+                    
                 case ANDI_O:
+                    // Bitwise And immediate:
+                    // umemory[GPR[r] + formOffset(o)]
+                    // ←(umemory[GPR[r] + formOffset(o)]) ∧ zeroExt(i)
+                    {
+                        uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
+                        memory.uwords[address] &= machine_types_zeroExt(immedi.immed);
+                        break;
+                    }
                 case BORI_O:
+                    /*
+                    Bitwise Or immediate:
+                    umemory[GPR[r] + formOffset(o)]
+                    ←(umemory[GPR[r] + formOffset(o)]) ∨zeroExt(i)
+                    */
+                    {
+                        uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
+                        memory.uwords[address] |= machine_types_zeroExt(immedi.immed);
+                        break;
+                    }
+
                 case NORI_O:
+                    /*
+                    Bitwise Not-Or immediate:
+                    umemory[GPR[r] + formOffset(o)]
+                    ←¬(umemory[GPR[r] + formOffset(o)]) ∨zeroExt(i))
+                    */
+                    {
+                        uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
+                        memory.uwords[address] = !(memory.uwords[address] || machine_types_zeroExt(immedi.immed));
+                        break;
+                    }
                 case XORI_O:
+                    /*
+                    Bitwise Exclusive-Or immediate:
+                    umemory[GPR[r] + formOffset(o)]
+                    ←(umemory[GPR[r] + formOffset(o)]) xor zeroExt(i)
+                    */
+                   {
+                        uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
+                        memory.uwords[address] ^= machine_types_zeroExt(immedi.immed);
+                        break;
+                   }
                 case BEQ_O:
+                    /*
+                    Branch on Equal:
+                    if memory[GPR[$sp]] = memory[GPR[r] + formOffset(o)]
+                    then PC ←(PC −1) + formOffset(i)
+                    */
+                    {
+                        if(memory.words[GPR[SP]] == GPR[immedi.reg] + machine_types_formOffset(immedi.offset)){
+                            program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                        };
+                        break;
+                    }
                 case BGEZ_O:
+                    /*
+                    Branch ≥0:
+                    if memory[GPR[r] + formOffset(o)] ≥0
+                    then PC ←(PC −1) + formOffset(i
+                    */
+                    {
+                        if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) >= 0){
+                            program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                        }
+                    }
                 case BGTZ_O:
+                    /*
+                    Branch > 0:
+                    if memory[GPR[r] + formOffset(o)] > 0
+                    then PC ←(PC −1) + formOffset(i)
+                    */
+                    {
+                        if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) > 0){
+                            program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                        }
+                    }
                 case BLEZ_O:
+                    /*
+                    Branch ≤0:
+                    if memory[GPR[r] + formOffset(o)] ≤0
+                    then PC ←(PC −1) + formOffset(i
+                    */
+                    {
+                        if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) <= 0){
+                            program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                        }
+                    }
                 case BLTZ_O:
+                    /*
+                    ranch < 0:
+                    if memory[GPR[r] + formOffset(o)] < 0
+                    then PC ←(PC −1) + formOffset(i)
+                    */
+                    {
+                      if(memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.immed)] < 0) {
+                        program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                      }  
+                      break;
+                    }
                 case BNE_O:
+                    /*
+                    Branch Not Equal:
+                    if memory[GPR[$sp]] ̸= memory[GPR[r] + formOffset(o)]
+                    then PC ←(PC −1) + formOffset(i)
+                    */
+                    {
+                        if(memory.words[GPR[SP]] != memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.offset)]){
+                            program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
+                        }
+                        break;
+                    }
                 default:
                 {
                     bail_with_error("Illegal Immediate Instruction");
@@ -387,4 +535,9 @@ void print_command (const char *filename){
 
 //prints the current state of the memory stack
 //could be useful for debugging
-void print_state(){}
+void print_state(){
+    for (int i = GPR[SP]; i < MEMORY_SIZE_IN_WORDS; i++) {
+        printf("0x%08X: 0x%08X\n", i, memory.words[i]);
+    }
+    printf("\n");    
+}
