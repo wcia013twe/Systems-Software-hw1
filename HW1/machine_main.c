@@ -7,22 +7,21 @@
 
 int main(int argc, char *argv[])
 {
-    extern void run(const char *filename);
     void usage(const char *cmdname);
     const char *command = argv[0];
 
     //if the second arg is the -p flag, print instructions
-    if (strcmp(argv[1], "-p") == 0) {
+    if (strcmp(argv[0], "-p") == 0) {
 	    //print the instructions
 	    //use disasmProgram(stdout, BOFFILE name)
 
         //commented out for compiling purposes
-        //print_command();
+        print_command(argv[2]);
     }
-    //if the number of arguments is eaxctly two, run instructions
-    if(argc == 2){
+    //if the number of arguments is exactly two, run instructions
+    if(argc == 1){
         //run() will use the input file 
-        run(argv[1]);
+        run(argv[0]);
     }
     //if there are more than or less than two arguments, run usage
     else{
