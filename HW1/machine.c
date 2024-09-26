@@ -254,6 +254,8 @@ void execute(bin_instr_t bi){
             break;
         }
     }
+    char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
+    print_state(toPrint);
 }
 
 //prints stack trace after each instruction
@@ -266,6 +268,9 @@ void run(const char *filename){
     FILE *out_file = fopen("out_file.txt", "w");
     printf("run has been called");
     BOFFILE *f = open_file(filename);
+    //Caitlin comment 9/26: a print_state needs to happen somewhere
+    //around here prior to executing any instructions
+    //e.g. print_state(null);
     load_instructions(f);
     for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
         //instr_type t = instruction_type(memory.instrs[i]);
@@ -286,20 +291,110 @@ void print_command (const char *filename){
     disasmProgram(stdout, *f);
 }
 
+//converts the instruction to a string
+//used for the print_state function
+char * toString(bin_instr_t bin){
+    char instr [MEMORY_SIZE_IN_WORDS];//this is the finale
+    char one [MEMORY_SIZE_IN_WORDS];
+    char two [MEMORY_SIZE_IN_WORDS];
+    char three [MEMORY_SIZE_IN_WORDS];
+    char four [MEMORY_SIZE_IN_WORDS];
+    char five [MEMORY_SIZE_IN_WORDS];
+    char six [MEMORY_SIZE_IN_WORDS];
+
+    switch(instruction_type(bin)){
+        case comp_instr_type:
+        {
+            comp_instr_t compi = bin.comp;
+            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", compi.op);
+            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", compi.rt);
+            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", compi.ot);
+            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hu", compi.rs);
+            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hd", compi.os);
+            snprintf(six, MEMORY_SIZE_IN_WORDS, "%hu", compi.func);
+            strcpy(instr, one);
+            strcat(instr, two);
+            strcat(instr, three);
+            strcat(instr, four);
+            strcat(instr, five);
+            strcat(instr, six);
+            break;
+        }//end of comp_instr_type case
+        case other_comp_instr_type:
+        {
+            other_comp_instr_t othci = bin.othc;
+            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", othci.op);
+            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", othci.reg);
+            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", othci.offset);
+            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hd", othci.arg);
+            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", othci.func);
+            strcpy(instr, one);
+            strcat(instr, two);
+            strcat(instr, three);
+            strcat(instr, four);
+            strcat(instr, five);
+            break;
+        }//end of other_comp_instr_type case
+        case syscall_instr_type:
+        {
+            syscall_instr_t syscalli = bin.syscall;
+            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.op);
+            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.reg);
+            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", syscalli.offset);
+            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", syscalli.code);
+            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.func);
+            strcpy(instr, one);
+            strcat(instr, two);
+            strcat(instr, three);
+            strcat(instr, four);
+            strcat(instr, five);
+            break;
+        }//end of syscall_instr_type case
+        case immed_instr_type:
+        {
+            immed_instr_t immedi = bin.immed;
+            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", immedi.op);
+            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", immedi.reg);
+            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", immedi.offset);
+            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", immedi.immed);
+            strcpy(instr, one);
+            strcat(instr, two);
+            strcat(instr, three);
+            strcat(instr, four);
+            break;
+        }//end of immed_instr_type case
+        case jump_instr_type:
+        {
+            jump_instr_t jump = bin.jump;
+            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", jump.op);
+            snprintf(two, MEMORY_SIZE_IN_WORDS, "%u", jump.addr);
+            strcpy(instr, one);
+            strcat(instr, two);
+            break;
+        }//end of jump_instr_type case
+        default:
+        {
+            bail_with_error("Illegal Instruction Type");
+            break;
+        }
+    }
+    return instr;
+}
+
 //prints the current state of the memory stack
 //could be useful for debugging
-void print_state(){
+void print_state(char current_instr [MEMORY_SIZE_IN_WORDS]){
     int MAX_STRING_LENGTH = 80;
     int TAB_LENGTH = 8;
 
-        char printString[MAX_STRING_LENGTH];
+    char printString[MAX_STRING_LENGTH];
     char tempString[32];//need to check and make sure this makes sense
     //trying to avoid DMA shenanigans1
 
     //trace header, one per instruction
     //Benny Comment 9-25 : instr_count not specified anywhere else except for set to 0 at top of file. Where does it increase?
     //Benny Comment 9-25 : instr could be collected from instructionType if passed to function here.
-    if(instr_count != 0) printf("\n==>\t %d: %s\n", instr_count, instr);
+    if(instr_count != 0) printf("\n==>\t %d: %s\n", instr_count, current_instr);
     printf("      PC: %d", program_counter);
     if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
     printf("\n");
@@ -326,12 +421,13 @@ void print_state(){
         for(int index = 0; index < MAX_STRING_LENGTH; index++){
             if(GPR[0]+ memoryIndex == GPR[1]) break;
             strcpy(tempString, (char*)(GPR[0] + memoryIndex));
+            int tempStringLenth = strlen(tempString);
             int tempIndex = 0;
             //fills in 8 indices of the printString preceding ':'
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
                 //Benny Comment 9-25 : bad practice to use strlen() in a loop header (it calls the function every time the loop runs)
                 //Benny Comment 9-25 : will not be an issue nor affect our runtime, just thought id be more nitpicky :D <3
-                if(index < TAB_LENGTH - strlen(tempString))
+                if(index < TAB_LENGTH - tempStringLength)
                     printString[index] = ' ';
                 else {
                     printString[index] = tempString[tempIndex];
@@ -345,8 +441,9 @@ void print_state(){
             index++;
             printString[index] = ' ';
             strcpy(tempString, (char*)memory.words[GPR[0] + memoryIndex]);
+            tempStringLenth = strlen(tempString);
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(tempIndex < strlen(tempString)){
+                if(tempIndex < tempStringLength)){
                     printString[index] = tempString[tempIndex];
                     tempIndex++;
                 }
