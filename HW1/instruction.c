@@ -243,9 +243,7 @@ static const char *instruction_formAddress_comment(address_type addr,
 
 // Return a string containing the assembly language form of instr,
 // which is found at address addr
-const char *instruction_assembly_form(address_type addr,
-				      bin_instr_t instr)
-{
+const char *instruction_assembly_form(address_type addr, bin_instr_t instr) {
     char *buf = instr_buf;
 
     // put in the mnemonic for the instruction
