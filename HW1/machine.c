@@ -22,7 +22,8 @@ static union mem_u{
 
 //VM Registers
 int GPR[NUM_REGISTERS];
-int program_counter;
+int program_counter, HI, LO;
+int instr_count = 0;
 
 //initialize the VM
 //set initial values for fp, sp, pc
@@ -37,6 +38,8 @@ void initialize(){
     //these were throwing errors, please test corrected version
     GPR = {0};
     program_counter = 0; 
+    HI = 0;
+    LO = 0;
     memory.words = {0};
     memory.uwords = {0};
     memory.instrs = {0};
@@ -279,4 +282,110 @@ void print_command (const char *filename){
 
 //prints the current state of the memory stack
 //could be useful for debugging
-void print_state(){}
+void print_state(){
+    int MAX_STRING_LENGTH = 80;
+    int TAB_LENGTH = 8;
+
+        char printString[MAX_STRING_LENGTH];
+    char tempString[32];//need to check and make sure this makes sense
+    //trying to avoid DMA shenanigans
+
+    //trace header, one per instruction
+    if(instr_count != 0) printf("\n==>\t %d: %s\n", instr_count, instr);
+    printf("      PC: %d", program_counter);
+    if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
+    printf("\n");
+
+    printf("GPR[$gp]: %d\tGPR[$sp]: %d\tGPR[$fp]: %d\tGPR[$r3]: %d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
+    printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
+
+    //prints all memory between $gp and $sp
+    int memoryIndex = 0;
+
+    while(GPR[0] + memoryIndex < GPR[1]){
+        printString[0] = '\0';
+        tempString[0] = '\0';
+        int tabIndex = 1;//max of 8 tabs
+
+        if(memoryIndex > 1 && (memory.words[GPR[0]+ memoryIndex] == 0) && (memory.words[GPR[0] + memoryIndex -1] == 0)){
+            if((GPR[0] + memoryIndex + 1) == GPR[1] || (memory.words[GPR[0]+memoryIndex+1] != 0)){
+                printf("        ...     \n");
+            }
+            memoryIndex++;
+            continue;
+        }
+
+        for(int index = 0; index < MAX_STRING_LENGTH; index++){
+            if(GPR[0]+ memoryIndex == GPR[1]) break;
+            strcpy(tempString, (char*)(GPR[0] + memoryIndex));
+            int tempIndex = 0;
+            //fills in 8 indices of the printString preceding ':'
+            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
+                if(index < TAB_LENGTH - strlen(tempString))
+                    printString[index] = ' ';
+                else {
+                    printString[index] = tempString[tempIndex];
+                    tempIndex++;
+                }
+            }
+            tempIndex = 0;
+            tabIndex++;
+            //fills in indices of printString including and succeeding ':'
+            printString[index] = ':';
+            index++;
+            printString[index] = ' ';
+            strcpy(tempString, (char*)memory.words[GPR[0] + memoryIndex]);
+            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
+                if(tempIndex < strlen(tempString)){
+                    printString[index] = tempString[tempIndex];
+                    tempIndex++;
+                }
+                else printString[index] = ' ';
+            }
+            tabIndex++;
+            memoryIndex++;
+        }
+        printf("%s\n", printString);
+    }//end of while loop that prints everything between $gp and $sp
+
+    //print everything between $sp and $fp
+    memoryIndex = 0;
+    while(GPR[1] + memoryIndex <= GPR[2]){
+        int tabIndex = 1;//max of 8 tabs
+        printString[0] = '\0';
+        tempString[0] = '\0';
+
+        for(int index = 0; index < MAX_STRING_LENGTH; index++){
+            if(GPR[1]+ memoryIndex > GPR[2]) break;
+            strcpy(tempString, (char*)(GPR[1] + memoryIndex));
+            int tempIndex = 0;
+            //fills in 8 indices of the printString preceding ':'
+            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
+                if(index < TAB_LENGTH - strlen(tempString))
+                    printString[index] = ' ';
+                else {
+                    printString[index] = tempString[tempIndex];
+                    tempIndex++;
+                }
+            }
+            tempIndex = 0;
+            tabIndex++;
+            //fills in indices of printString including and succeeding ':'
+            printString[index] = ':';
+            index++;
+            printString[index] = ' ';
+            strcpy(tempString, (char*)memory.words[GPR[1] + memoryIndex]);
+            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
+                if(tempIndex < strlen(tempString)){
+                    printString[index] = tempString[tempIndex];
+                    tempIndex++;
+                }
+                else printString[index] = ' ';
+            }
+            tabIndex++;
+            memoryIndex++;
+        }
+        printf("%s\n", printString);
+    }
+    instr_count++;
+}//end of print_state
