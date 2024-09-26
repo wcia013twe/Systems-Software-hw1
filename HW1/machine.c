@@ -29,10 +29,13 @@ int program_counter;
 int32_t HI = 0;
 int32_t LO = 0;
 
+//Placeholder Blank Instruction (For Comparisons)
+bin_instr_t blankInstr;
+
 //initialize the VM
 //set initial values for fp, sp, pc
 //initialize memory stack
-void initialize(){
+void initialize(BOFFILE bf){
     //global pointer is index 0
     //stack pointer is index 1
     //frame pointer is index 2
@@ -51,14 +54,9 @@ void initialize(){
     for (int i = 0; i < NUM_REGISTERS; i++)
         GPR[i] = 0;
 
-    //PC Initializations
-    program_counter = 0;
-
     //Memory Structure Initialization
 
         //Blank Initialized bin_instr_t
-        bin_instr_t blankInstr;
-
         blankInstr.comp = (comp_instr_t){0};
         blankInstr.othc = (other_comp_instr_t){0};
         blankInstr.syscall = (syscall_instr_t){0};
@@ -72,10 +70,12 @@ void initialize(){
         memory.instrs[i] = blankInstr;
     }
 
-    //Open the file
-    BOFFILE bof = bof_read_open(rename);
+    // const char* something;
 
-    BOFHeader header = bof_read_header(bof);
+    //Open the file
+    // BOFFILE bof = bof_read_open(something);
+
+    // BOFHeader header = bof_read_header(bof);
 
     //The starting address of the code is the initial value of the program counter (PC).
     program_counter = header.text_start_address;
@@ -87,9 +87,9 @@ void initialize(){
     GPR[SP] = header.stack_bottom_addr;
     GPR[FP] = header.stack_bottom_addr;
 
-    load_instructions(&bof);
+    // load_instructions(&bof);
 
-    bof_close(bof);
+    // bof_close(bof);
     // free(bof); not needed for non-pointer
     
 }
@@ -134,7 +134,7 @@ void load_instructions(BOFFILE *f){
     while (num_instr <= MEMORY_SIZE_IN_WORDS) {
         printf("%d", num_instr);
         if(ftell(f->fileptr) == end){
-            printf("Reached the end of the file");
+            printf("\nReached the end of the file");
             printf("%ld %d", ftell(f->fileptr), end);
             break;
         }
@@ -153,6 +153,7 @@ void load_instructions(BOFFILE *f){
 //move fp, sp and pc as needed
 //will need extra stack management functions
 void execute(bin_instr_t bi){
+
     //we'll probably need to open the file and load the instructions
     //but that could also happen in the run
     switch(instruction_type(bi)){
@@ -340,27 +341,41 @@ void execute(bin_instr_t bi){
     }
 }
 
-//prints stack trace after each instruction
-void trace(){}
-
 //puts the functionality of all the previous functions together
 //works as the main function of this file
 //call init, open, load, execute and trace 
 void run(const char *filename){
-    FILE *out_file = fopen("out_file.txt", "w");
-    printf("run has been called");
-    BOFFILE *f = open_file(filename);
-    load_instructions(f);
-    for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
-        //instr_type t = instruction_type(memory.instrs[i]);
-        //printf("%d", t);
-        bin_instr_t *ptr = &memory.instrs[i];
-        uintptr_t add = (uintptr_t)ptr;
-        unsigned int int_add = (unsigned int)add;
-        fprintf(out_file, "%d    ", i);
-        instruction_print(out_file, int_add, memory.instrs[i]);
-    }
-    fclose(out_file);
+
+    printf("Run has been called\n");
+
+    //Opening BOFFILE
+    BOFFILE bf = bof_read_open(filename);
+    BOFFILEHeader bf_header = bof_read_header(bf);
+
+    //Initializing
+    initialize(bf);
+
+    //Loading Instructions
+    load_instructions(&bof);
+
+    //Execute Loop
+
+
+
+    // FILE *out_file = fopen("out_file.txt", "w");
+    // printf("run has been called");
+    // BOFFILE *f = open_file(filename);
+    // load_instructions(f);
+    // for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
+    //     //instr_type t = instruction_type(memory.instrs[i]);
+    //     //printf("%d", t);
+    //     bin_instr_t *ptr = &memory.instrs[i];
+    //     uintptr_t add = (uintptr_t)ptr;
+    //     unsigned int int_add = (unsigned int)add;
+    //     fprintf(out_file, "%d    ", i);
+    //     instruction_print(out_file, int_add, memory.instrs[i]);
+    // }
+    // fclose(out_file);
 }
 
 //when given the "-p" flag, prints out the instructions as written
