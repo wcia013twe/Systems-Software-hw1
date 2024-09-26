@@ -24,7 +24,6 @@ static union mem_u{
 //VM Registers
 int GPR[NUM_REGISTERS];
 int program_counter, HI, LO;
-int instr_count = 0;
 
 //initialize the VM
 //set initial values for fp, sp, pc
@@ -159,6 +158,7 @@ void execute(bin_instr_t bi){
                     bail_with_error("Illegal Comp Instruction");
                     break;
             }
+            program_couter++;
         }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
@@ -185,6 +185,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
+            program_couter++;
         }
         //Madigan
         case syscall_instr_type:
@@ -202,6 +203,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
+            program_couter++;
         }
 
         //Wesley
@@ -229,6 +231,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
+            program_couter++;
         }
 
         //Benny
@@ -255,7 +258,6 @@ void execute(bin_instr_t bi){
         }
     }
     char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
-    print_state(toPrint);
 }
 
 //prints stack trace after each instruction
@@ -270,7 +272,8 @@ void run(const char *filename){
     BOFFILE *f = open_file(filename);
     //Caitlin comment 9/26: a print_state needs to happen somewhere
     //around here prior to executing any instructions
-    //e.g. print_state(null);
+    //e.g.
+    print_state(null, -1);
     load_instructions(f);
     for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
         //instr_type t = instruction_type(memory.instrs[i]);
@@ -383,7 +386,7 @@ char * toString(bin_instr_t bin){
 
 //prints the current state of the memory stack
 //could be useful for debugging
-void print_state(char current_instr [MEMORY_SIZE_IN_WORDS]){
+void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
     int MAX_STRING_LENGTH = 80;
     int TAB_LENGTH = 8;
 
@@ -394,7 +397,7 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS]){
     //trace header, one per instruction
     //Benny Comment 9-25 : instr_count not specified anywhere else except for set to 0 at top of file. Where does it increase?
     //Benny Comment 9-25 : instr could be collected from instructionType if passed to function here.
-    if(instr_count != 0) printf("\n==>\t %d: %s\n", instr_count, current_instr);
+    if(currentPC != -1) printf("\n==>\t %d: %s\n", currentPC, current_instr);
     printf("      PC: %d", program_counter);
     if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
     printf("\n");
@@ -494,7 +497,4 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS]){
         }
         printf("%s\n", printString);
     }
-
-    //Benny Comment 9-25 : i see instr_count increasing here but its being checked != 0 above before any changes are able to be made. unsure of logic
-    instr_count++;
 }//end of print_state
