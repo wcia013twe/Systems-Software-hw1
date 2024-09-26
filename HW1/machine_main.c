@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
         //commented out for compiling purposes
         //print_command();
     }
-    //if the number of arguments is eaxctly two, run instructions
+    //if the number of arguments is exactly two, run instructions
     if(argc == 2){
         //run() will use the input file 
         run(argv[1]);
