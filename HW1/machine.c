@@ -16,6 +16,9 @@
 
 #define MEMORY_SIZE_IN_WORDS 32768
 
+//out file
+FILE *out_file;
+
 //memory array for the VM
 //the data is shared in a union
 static union mem_u{
@@ -31,6 +34,9 @@ int program_counter, HI, LO;
 //Data Dictionary
 int32_t HI = 0;
 int32_t LO = 0;
+
+//flag for printing stack trace
+bool tracing = false;
 
 //Placeholder Blank Instruction (For Comparisons)
 bin_instr_t blankInstr;
@@ -79,6 +85,10 @@ void initialize(BOFFILE bf){
     //Open the file
     // BOFFILE bof = bof_read_open(something);
 
+    printf("trying to open header in init()");
+    if (fseek(bf.fileptr, 0, SEEK_SET) != 0) {
+        printf("file pointer not at beginning");
+    }
     BOFHeader header = bof_read_header(bf);
 
     //The starting address of the code is the initial value of the program counter (PC).
@@ -130,6 +140,8 @@ void initialize(BOFFILE bf){
 
 //read/decode and put instructions into memory
 //will probably use a lot from instructions file
+/*
+//this newer load_instructions file did not work, but the old one does work so I put it back in here
 void load_instructions(BOFFILE *f){
 
     //should initialize PC to val specified in bof here
@@ -142,6 +154,7 @@ void load_instructions(BOFFILE *f){
         printf("file pointer not at beginning");
     }
 
+    printf("trying to open header in load_instrs()");
     BOFHeader header = bof_read_header(*f);
 
     if(!bof_has_correct_magic_number(header)){
@@ -173,6 +186,42 @@ void load_instructions(BOFFILE *f){
     
     printf("Reached the end of the file");
 }
+*/
+
+void load_instructions(BOFFILE *f){
+
+    //should initialize PC to val specified in bof here
+
+    if(f->fileptr == NULL){
+        printf("fileptr null");
+    }
+    if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
+        printf("file pointer not at beginning");
+    }
+
+    int num_instr = 0;
+    fseek(f->fileptr,0,SEEK_END); //move ptr to end
+    int end = ftell(f->fileptr); //tell me where the ptr is
+
+    fseek(f->fileptr, 0, SEEK_SET); //move ptr back to beginning
+    while (num_instr <= MEMORY_SIZE_IN_WORDS) {
+        printf("%d", num_instr);
+        if(ftell(f->fileptr) == end){
+            printf("Reached the end of the file");
+            printf("%ld %d", ftell(f->fileptr), end);
+            break;
+        }
+        bin_instr_t instr = instruction_read(*f);
+        //puts the bin_instr_t into memory at memory.instrs
+        memory.instrs[num_instr] = instr;
+        num_instr++;
+    }
+
+    if(num_instr >= MEMORY_SIZE_IN_WORDS){
+        bail_with_error("instr array full");
+    }
+}
+
 
 //do what the instruction says
 //move fp, sp and pc as needed
@@ -336,20 +385,23 @@ void execute(bin_instr_t bi){
             switch(syscalli.func){
                 case print_char_sc:
                     {
-                        fprintf(stdout, "%s", memory.instrs[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        memory.words[GPR[SP]] = fputc(memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)], out_file);
                         break;
                     }
                 case read_char_sc:
                     {
-                        fscanf(stdin, "%s", &memory.instrs[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)] = getc(stdin);
+                        break;
                     }
                 case start_tracing_sc:
                     {
-                        
+                        tracing = true;
+                        break;
                     }
                 case stop_tracing_sc:
                     {
-                        
+                        tracing = false;
+                        break;
                     }
                 default:
                 {
@@ -537,15 +589,30 @@ void execute(bin_instr_t bi){
     // char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
 
+void print_instructions(){
+    for(int i=0; i<MEMORY_SIZE_IN_WORDS; i++){
+        bin_instr_t *ptr = &memory.instrs[i];
+        uintptr_t add = (uintptr_t)ptr;
+        unsigned int int_add = (unsigned int)add;
+        if(add == 0){
+            continue;
+        }
+    instruction_print(out_file, int_add, memory.instrs[i]);
+    }
+}
+
 //puts the functionality of all the previous functions together
 //works as the main function of this file
 //call init, open, load, execute and trace 
 void run(const char *filename){
 
+    out_file = fopen("out_file.txt", "w"); 
+
     printf("Run has been called\n\n");
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
+    printf("trying to open header in run()");
     BOFHeader bf_header = bof_read_header(bf);
 
     //Initializing
@@ -554,11 +621,20 @@ void run(const char *filename){
     //Loading Instructions
     load_instructions(&bf);
 
+    //print instructions (for debugging)
+    print_instructions();
+
     //Execute Loop
-    int i = 0;
-    while (i < MEMORY_SIZE_IN_WORDS) {
-        execute(memory.instrs[i]);
-    }
+    bin_instr_t *ptr = &memory.instrs[0];
+    uintptr_t add = (uintptr_t)ptr;
+    unsigned int int_add = (unsigned int)add;
+    printf("\n");
+    instruction_print(stdout, int_add, memory.instrs[0]);
+    printf("\n");
+    execute(memory.instrs[0]);
+    //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
+        //execute(memory.instrs[i]);
+    //}
 
 
     // FILE *out_file = fopen("out_file.txt", "w");
