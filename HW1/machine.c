@@ -46,9 +46,11 @@ void initialize(BOFFILE bf){
     //return address register is index 7
 
     //these were throwing errors, please test corrected version
-    GPR = {0};
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        GPR[i] = 0;
+    }
+    
     program_counter = 0; 
-    memory = {0};
     
 
     //Benny 9/24- I think this should fix these inititializations
@@ -77,7 +79,7 @@ void initialize(BOFFILE bf){
     //Open the file
     // BOFFILE bof = bof_read_open(something);
 
-    // BOFHeader header = bof_read_header(bof);
+    BOFHeader header = bof_read_header(bf);
 
     //The starting address of the code is the initial value of the program counter (PC).
     program_counter = header.text_start_address;
@@ -153,9 +155,9 @@ void load_instructions(BOFFILE *f){
     //while not at the end and number of instructions did not exceed memory
     while (!bof_at_eof(*f) && num_instr <= MEMORY_SIZE_IN_WORDS) {
         printf("%d", num_instr);
-        if(ftell(f->fileptr) == end){
+        if(ftell(f->fileptr) == EOF){
             printf("\nReached the end of the file");
-            printf("%ld %d", ftell(f->fileptr), end);
+            printf("%ld %d", ftell(f->fileptr), EOF);
             break;
         }
         bin_instr_t instr = instruction_read(*f);
@@ -522,7 +524,7 @@ void execute(bin_instr_t bi){
         }
 
     }
-    char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
+    // char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
 
 //puts the functionality of all the previous functions together
@@ -540,11 +542,11 @@ void run(const char *filename){
     initialize(bf);
 
     //Loading Instructions
-    load_instructions(&bof);
+    load_instructions(&bf);
 
     //Execute Loop
     int i = 0;
-    while (i < MEMORY_SIZE_IN_WORDS && memory.instrs[i] != blankInstr) {
+    while (i < MEMORY_SIZE_IN_WORDS) {
         execute(memory.instrs[i]);
     }
 
@@ -574,93 +576,93 @@ void print_command (const char *filename){
 
 //converts the instruction to a string
 //used for the print_state function
-char * toString(bin_instr_t bin){
-    char instr [MEMORY_SIZE_IN_WORDS];//this is the finale
-    char one [MEMORY_SIZE_IN_WORDS];
-    char two [MEMORY_SIZE_IN_WORDS];
-    char three [MEMORY_SIZE_IN_WORDS];
-    char four [MEMORY_SIZE_IN_WORDS];
-    char five [MEMORY_SIZE_IN_WORDS];
-    char six [MEMORY_SIZE_IN_WORDS];
+// char * toString(bin_instr_t bin){
+//     char instr [MEMORY_SIZE_IN_WORDS];//this is the finale
+//     char one [MEMORY_SIZE_IN_WORDS];
+//     char two [MEMORY_SIZE_IN_WORDS];
+//     char three [MEMORY_SIZE_IN_WORDS];
+//     char four [MEMORY_SIZE_IN_WORDS];
+//     char five [MEMORY_SIZE_IN_WORDS];
+//     char six [MEMORY_SIZE_IN_WORDS];
 
-    switch(instruction_type(bin)){
-        case comp_instr_type:
-        {
-            comp_instr_t compi = bin.comp;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", compi.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", compi.rt);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", compi.ot);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hu", compi.rs);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hd", compi.os);
-            snprintf(six, MEMORY_SIZE_IN_WORDS, "%hu", compi.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            strcat(instr, six);
-            break;
-        }//end of comp_instr_type case
-        case other_comp_instr_type:
-        {
-            other_comp_instr_t othci = bin.othc;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", othci.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", othci.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", othci.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hd", othci.arg);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", othci.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            break;
-        }//end of other_comp_instr_type case
-        case syscall_instr_type:
-        {
-            syscall_instr_t syscalli = bin.syscall;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", syscalli.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", syscalli.code);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            break;
-        }//end of syscall_instr_type case
-        case immed_instr_type:
-        {
-            immed_instr_t immedi = bin.immed;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", immedi.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", immedi.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", immedi.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", immedi.immed);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            break;
-        }//end of immed_instr_type case
-        case jump_instr_type:
-        {
-            jump_instr_t jump = bin.jump;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", jump.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%u", jump.addr);
-            strcpy(instr, one);
-            strcat(instr, two);
-            break;
-        }//end of jump_instr_type case
-        default:
-        {
-            bail_with_error("Illegal Instruction Type");
-            break;
-        }
-    }
-    return instr;
-}
+//     switch(instruction_type(bin)){
+//         case comp_instr_type:
+//         {
+//             comp_instr_t compi = bin.comp;
+//             snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", compi.op);
+//             snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", compi.rt);
+//             snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", compi.ot);
+//             snprintf(four, MEMORY_SIZE_IN_WORDS, "%hu", compi.rs);
+//             snprintf(five, MEMORY_SIZE_IN_WORDS, "%hd", compi.os);
+//             snprintf(six, MEMORY_SIZE_IN_WORDS, "%hu", compi.func);
+//             strcpy(instr, one);
+//             strcat(instr, two);
+//             strcat(instr, three);
+//             strcat(instr, four);
+//             strcat(instr, five);
+//             strcat(instr, six);
+//             break;
+//         }//end of comp_instr_type case
+//         case other_comp_instr_type:
+//         {
+//             other_comp_instr_t othci = bin.othc;
+//             snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", othci.op);
+//             snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", othci.reg);
+//             snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", othci.offset);
+//             snprintf(four, MEMORY_SIZE_IN_WORDS, "%hd", othci.arg);
+//             snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", othci.func);
+//             strcpy(instr, one);
+//             strcat(instr, two);
+//             strcat(instr, three);
+//             strcat(instr, four);
+//             strcat(instr, five);
+//             break;
+//         }//end of other_comp_instr_type case
+//         case syscall_instr_type:
+//         {
+//             syscall_instr_t syscalli = bin.syscall;
+//             snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.op);
+//             snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.reg);
+//             snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", syscalli.offset);
+//             snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", syscalli.code);
+//             snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.func);
+//             strcpy(instr, one);
+//             strcat(instr, two);
+//             strcat(instr, three);
+//             strcat(instr, four);
+//             strcat(instr, five);
+//             break;
+//         }//end of syscall_instr_type case
+//         case immed_instr_type:
+//         {
+//             immed_instr_t immedi = bin.immed;
+//             snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", immedi.op);
+//             snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", immedi.reg);
+//             snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", immedi.offset);
+//             snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", immedi.immed);
+//             strcpy(instr, one);
+//             strcat(instr, two);
+//             strcat(instr, three);
+//             strcat(instr, four);
+//             break;
+//         }//end of immed_instr_type case
+//         case jump_instr_type:
+//         {
+//             jump_instr_t jump = bin.jump;
+//             snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", jump.op);
+//             snprintf(two, MEMORY_SIZE_IN_WORDS, "%u", jump.addr);
+//             strcpy(instr, one);
+//             strcat(instr, two);
+//             break;
+//         }//end of jump_instr_type case
+//         default:
+//         {
+//             bail_with_error("Illegal Instruction Type");
+//             break;
+//         }
+//     }
+//     return instr;
+// }
 
 //prints the current state of the memory stack
 //could be useful for debugging
@@ -702,7 +704,7 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
         for(int index = 0; index < MAX_STRING_LENGTH; index++){
             if(GPR[0]+ memoryIndex == GPR[1]) break;
             strcpy(tempString, (char*)(GPR[0] + memoryIndex));
-            int tempStringLenth = strlen(tempString);
+            int tempStringLength = strlen(tempString);
             int tempIndex = 0;
             //fills in 8 indices of the printString preceding ':'
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
@@ -722,9 +724,9 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
             index++;
             printString[index] = ' ';
             strcpy(tempString, (char*)memory.words[GPR[0] + memoryIndex]);
-            tempStringLenth = strlen(tempString);
+            tempStringLength = strlen(tempString);
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(tempIndex < tempStringLength)){
+                if(tempIndex < tempStringLength){
                     printString[index] = tempString[tempIndex];
                     tempIndex++;
                 }

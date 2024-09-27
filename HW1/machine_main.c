@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 
     //Two args present, check for -p
     if(argc == 2) {
-        if (strcmp(argv[0] == "-p") == 0)
+        if (strcmp(argv[0], "-p") == 0)
             print_command(argv[1]);
     }
 
