@@ -38,6 +38,12 @@ int32_t LO = 0;
 //flag for printing stack trace
 bool tracing = false;
 
+//flag for stopping
+bool halt = false;
+
+//number of instructions to execute
+int num_instr = 0;
+
 //Placeholder Blank Instruction (For Comparisons)
 bin_instr_t blankInstr;
 
@@ -198,8 +204,6 @@ void load_instructions(BOFFILE *f){
     if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
         printf("file pointer not at beginning");
     }
-
-    int num_instr = 0;
     fseek(f->fileptr,0,SEEK_END); //move ptr to end
     int end = ftell(f->fileptr); //tell me where the ptr is
 
@@ -295,8 +299,7 @@ void execute(bin_instr_t bi){
                     bail_with_error("Illegal Comp Instruction");
                     break;
             }
- program_counter++;
-
+        break;
         }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
@@ -375,14 +378,14 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-        program_counter++;
+            break;
         }
         //Madigan
         case syscall_instr_type:
         {
             syscall_instr_t syscalli = bi.syscall;
             //look in enum for syscall_type
-            switch(syscalli.func){
+            switch(syscalli.code){
                 case print_char_sc:
                     {
                         memory.words[GPR[SP]] = fputc(memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)], out_file);
@@ -403,13 +406,18 @@ void execute(bin_instr_t bi){
                         tracing = false;
                         break;
                     }
+                case exit_sc:
+                    {
+                        halt = true;
+                        break;
+                    }
                 default:
                 {
                     bail_with_error("Illegal Syscall Instruction");
                     break;
                 }
             }
-        program_counter++;
+            break;
         }
 
         //Wesley
@@ -548,8 +556,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-
-            program_counter++;
+            break;
         }
 
         //Benny
@@ -577,6 +584,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
+            break;
         }
 
         case error_instr_type:
@@ -612,8 +620,8 @@ void run(const char *filename){
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
-    printf("trying to open header in run()");
-    BOFHeader bf_header = bof_read_header(bf);
+    //printf("trying to open header in run()");
+    //BOFHeader bf_header = bof_read_header(bf);
 
     //Initializing
     initialize(bf);
@@ -625,13 +633,16 @@ void run(const char *filename){
     print_instructions();
 
     //Execute Loop
-    bin_instr_t *ptr = &memory.instrs[0];
+    int i=6;
+    for(int i=0; i<num_instr; i++){
+        bin_instr_t *ptr = &memory.instrs[i];
     uintptr_t add = (uintptr_t)ptr;
     unsigned int int_add = (unsigned int)add;
     printf("\n");
-    instruction_print(stdout, int_add, memory.instrs[0]);
+    instruction_print(stdout, int_add, memory.instrs[i]);
     printf("\n");
-    execute(memory.instrs[0]);
+    execute(memory.instrs[i]);
+    }
     //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
         //execute(memory.instrs[i]);
     //}
