@@ -12,7 +12,7 @@
 #include "machine_types.h"
 #include "disasm.h"
 #include "regname.h"
-#include "string.h"
+#include "string.h"//do we need this twice?
 
 #define MEMORY_SIZE_IN_WORDS 32768
 
@@ -30,10 +30,6 @@ static union mem_u{
 //VM Registers
 int GPR[NUM_REGISTERS];
 int program_counter, HI, LO;
-
-//booleans
-boolean tracing = false;
-boolean halt = false;
 
 //Data Dictionary
 int32_t HI = 0;
@@ -60,15 +56,8 @@ void initialize(BOFFILE bf){
     //frame pointer is index 2
     //indices 3-6 are unndesignated
     //return address register is index 7
-
-    //these were throwing errors, please test corrected version
-    for (int i = 0; i < NUM_REGISTERS; i++) {
-        GPR[i] = 0;
-    }
     
     program_counter = 0; 
-
-    
 
     //Benny 9/24- I think this should fix these inititializations
     //GPR initializations
