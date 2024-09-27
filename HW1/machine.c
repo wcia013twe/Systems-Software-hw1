@@ -336,12 +336,12 @@ void execute(bin_instr_t bi){
             switch(syscalli.func){
                 case print_char_sc:
                     {
-                        fprintf(stdout, "%s", memory.instr[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        fprintf(stdout, "%s", memory.instrs[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
                         break;
                     }
                 case read_char_sc:
                     {
-                        fscanf(stdin, "%s", &memory.instr[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        fscanf(stdin, "%s", &memory.instrs[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
                     }
                 case start_tracing_sc:
                     {
@@ -786,5 +786,5 @@ void print_state(bin_instr_t current_instr, int currentPC){
         printf("%s\n", printString);
     }
     printf("==>");
-    instruction_print(stdout, memory.instrs[program_counter], current_instr); 
+    instruction_print(stdout, &memory.instrs[program_counter], current_instr); 
 }//end of print_state
