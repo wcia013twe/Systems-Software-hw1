@@ -288,7 +288,7 @@ void execute(bin_instr_t bi){
                     break;
 
                 case SYS_F:
-
+                    printf("odd sys_f call in othc that would make no sense so this would never actually print okay if this prints ill be really confused <3");
 
 
                 default:
