@@ -244,7 +244,9 @@ void execute(bin_instr_t bi){
                     bail_with_error("Illegal Comp Instruction");
                     break;
             }
-            program_couter++;
+
+            program_counter++;
+
         }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
@@ -323,7 +325,8 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_couter++;
+
+            program_counter++;
         }
         //Madigan
         case syscall_instr_type:
@@ -341,7 +344,8 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_couter++;
+
+            program_counter++;
         }
 
         //Wesley
@@ -480,7 +484,8 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_couter++;
+
+            program_counter++;
         }
 
         //Benny
@@ -515,6 +520,7 @@ void execute(bin_instr_t bi){
             bail_with_error("Illegal Instruction Type");
             break;
         }
+
     }
     char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
@@ -524,7 +530,7 @@ void execute(bin_instr_t bi){
 //call init, open, load, execute and trace 
 void run(const char *filename){
 
-    printf("Run has been called\n");
+    printf("Run has been called\n\n");
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
@@ -537,7 +543,10 @@ void run(const char *filename){
     load_instructions(&bof);
 
     //Execute Loop
-
+    int i = 0;
+    while (i < MEMORY_SIZE_IN_WORDS && memory.instrs[i] != blankInstr) {
+        execute(memory.instrs[i]);
+    }
 
 
     // FILE *out_file = fopen("out_file.txt", "w");

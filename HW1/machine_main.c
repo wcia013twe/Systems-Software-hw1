@@ -5,28 +5,47 @@
 #include "instruction.h"
 #include "disasm.h"
 
-int main(int argc, char *argv[])
-{
-    void usage(const char *cmdname);
+int main(int argc, char *argv[]) {
+
     const char *command = argv[0];
 
-    //if the second arg is the -p flag, print instructions
-    if (strcmp(argv[0], "-p") == 0) {
-	    //print the instructions
-	    //use disasmProgram(stdout, BOFFILE name)
-
-        //commented out for compiling purposes
-        print_command(argv[2]);
+    //Two args present, check for -p
+    if(argc == 2) {
+        if (strcmp(argv[0] == "-p") == 0)
+            print_command(argv[1]);
     }
-    //if the number of arguments is exactly two, run instructions
-    if(argc == 1){
-        //run() will use the input file 
+
+    //Only one arg present, should be file location
+    else if (argc == 1) {
         run(argv[0]);
     }
-    //if there are more than or less than two arguments, run usage
-    else{
-        usage(command);
+
+    //Other than one or two args, run usage
+    else {
+
+        void usage(const char *cmdname);
+
     }
+
+
+
+    // //if the second arg is the -p flag, print instructions
+    // if (strcmp(argv[0], "-p") == 0) {
+	//     //print the instructions
+	//     //use disasmProgram(stdout, BOFFILE name)
+
+    //     //commented out for compiling purposes
+    //     print_command(argv[2]);
+    // }
+    // //if the number of arguments is exactly two, run instructions
+    // if(argc == 1){
+    //     //run() will use the input file 
+    //     run(argv[0]);
+    // }
+    // //if there are more than or less than two arguments, run usage
+    // else{
+    //     usage(command);
+    // }
 
     return EXIT_SUCCESS;
 }
