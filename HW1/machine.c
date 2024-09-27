@@ -32,18 +32,12 @@ int GPR[NUM_REGISTERS];
 int program_counter, HI, LO;
 
 //booleans
-boolean tracing = false;
-boolean halt = false;
+bool tracing = false;
+bool halt = false;
 
 //Data Dictionary
 int32_t HI = 0;
 int32_t LO = 0;
-
-//flag for printing stack trace
-bool tracing = false;
-
-//flag for stopping
-bool halt = false;
 
 //number of instructions to execute
 int num_instr = 0;
