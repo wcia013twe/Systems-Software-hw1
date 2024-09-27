@@ -244,7 +244,7 @@ void execute(bin_instr_t bi){
                     bail_with_error("Illegal Comp Instruction");
                     break;
             }
-            program_couter++;
+            program_counter++;
         }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
@@ -323,7 +323,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_couter++;
+            program_counter++;
         }
         //Madigan
         case syscall_instr_type:
@@ -332,16 +332,29 @@ void execute(bin_instr_t bi){
             //look in enum for syscall_type
             switch(syscalli.func){
                 case print_char_sc:
+                    {
+                        fprintf(stdout, "%s", memory.instr[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        break;
+                    }
                 case read_char_sc:
+                    {
+                        fscanf(stdin, "%s", &memory.instr[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                    }
                 case start_tracing_sc:
+                    {
+                        
+                    }
                 case stop_tracing_sc:
+                    {
+                        
+                    }
                 default:
                 {
                     bail_with_error("Illegal Syscall Instruction");
                     break;
                 }
             }
-            program_couter++;
+            program_counter++;
         }
 
         //Wesley
@@ -565,7 +578,7 @@ void print_command (const char *filename){
 
 //converts the instruction to a string
 //used for the print_state function
-char * toString(bin_instr_t bin){
+/*char * toString(bin_instr_t bin){
     char instr [MEMORY_SIZE_IN_WORDS];//this is the finale
     char one [MEMORY_SIZE_IN_WORDS];
     char two [MEMORY_SIZE_IN_WORDS];
@@ -651,11 +664,11 @@ char * toString(bin_instr_t bin){
         }
     }
     return instr;
-}
+}*/
 
 //prints the current state of the memory stack
 //could be useful for debugging
-void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
+void print_state(bin_instr_t current_instr, int currentPC){
     int MAX_STRING_LENGTH = 80;
     int TAB_LENGTH = 8;
 
@@ -664,9 +677,6 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
     //trying to avoid DMA shenanigans1
 
     //trace header, one per instruction
-    //Benny Comment 9-25 : instr_count not specified anywhere else except for set to 0 at top of file. Where does it increase?
-    //Benny Comment 9-25 : instr could be collected from instructionType if passed to function here.
-    if(currentPC != -1) printf("\n==>\t %d: %s\n", currentPC, current_instr);
     printf("      PC: %d", program_counter);
     if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
     printf("\n");
@@ -766,4 +776,6 @@ void print_state(char current_instr [MEMORY_SIZE_IN_WORDS], int currentPC){
         }
         printf("%s\n", printString);
     }
+    printf("==>");
+    instruction_print(stdout, memory.instrs[program_counter], current_instr); 
 }//end of print_state
