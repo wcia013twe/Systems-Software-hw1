@@ -626,8 +626,10 @@ void run(const char *filename){
     //print instructions (for debugging)
     print_instructions();
 
-    int i = 0;
+    //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
+    print_state(bin);
+    
     while (!halt) {
         bin = memory.instrs[program_counter];
         program_counter++;
@@ -752,10 +754,53 @@ void print_command (const char *filename){
     return instr;
 }*/
 
+//prints the program counter and the current status of the
+//of the general purpose registers
+void print_trace_header(){
+    //trace header, one per instruction
+    printf("      PC: %d", program_counter);
+    if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
+    printf("\n");
 
-//prints the current state of the memory stack
-//could be useful for debugging
-void print_state(bin_instr_t current_instr, int currentPC){
+    printf("GPR[$gp]: %4d\tGPR[$sp]: %4d\tGPR[$fp]: %4d\tGPR[$r3]: %4d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
+    printf("GPR[$r4]: %4d\nGPR[$r5]: %4d\tGPR[$r6]: %4d\tGPR[$ra]: %4d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
+}//end of print_trace_header
+
+//prints data from the GPR[GPRindex] to GPR[GPRindex+1] exclusive of GPR[GPRindex+1]
+void print_data(int GPRindex){
+    //variable to keep track of the offset from the GPRindex
+    int memoryOffset = 0;
+
+    //variable to keep track of characters in a line
+    //can't exceed 69
+    int numChars = 0;
+    while(memory.words[GPR[GPRindex] + memoryOffset] != memory.words[GPR[GPRindex+1]]){
+        //skips printing if all 0s until the next nonzero-value or the end of the loop
+        //the first condition prevents inadvertently accessing an instr
+        //the second and third conditions ensure the first zero is printed and only
+        //consecutive 0s are skipped
+        if((memoryOffset > 1) && (memory.words[GPR[GPRindex] + memoryOffset] == 0) && (memory.words[GPR[GPRindex] + memoryOffset - 1] == 0)){
+            //prints ellipse iff the next value is nonzero or the end of the loop
+            //will be reached on the next iteration
+            if((GPR[GPRindex] + memoryOffset + 1 == GPR[GPRindex + 1]) || (memory.words[GPR[GPRindex] + memoryOffset + 1] != 0)){
+                printf("        ...     \n");
+            }
+            memoryOffset++;
+            continue;
+        }//end of zeroes logic
+        
+        //determines if a newline will need to be printed
+        numChars = numChars + 10 + count_digits(memory.words[GPR[GPRindex] + memoryOffset]);
+        if(numChars > 69){
+            printf("\n");
+            numChars = 0;
+        }
+        printf("    %4d: %d\t", (GPR[GPRindex] + memoryOffset), memory.words[GPR[GPRindex] + memoryOffset]);
+        memoryOffset++;
+    }
+   /*
+    
+    
     int MAX_STRING_LENGTH = 80;
     int TAB_LENGTH = 8;
 
@@ -763,13 +808,7 @@ void print_state(bin_instr_t current_instr, int currentPC){
     char tempString[32];//need to check and make sure this makes sense
     //trying to avoid DMA shenanigans1
 
-    //trace header, one per instruction
-    printf("      PC: %d", program_counter);
-    if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
-    printf("\n");
 
-    printf("GPR[$gp]: %d\tGPR[$sp]: %d\tGPR[$fp]: %d\tGPR[$r3]: %d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
-    printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
 
     //prints all memory between $gp and $sp
     int memoryIndex = 0;
@@ -822,47 +861,24 @@ void print_state(bin_instr_t current_instr, int currentPC){
             memoryIndex++;
         }
         printf("%s\n", printString);
-    }//end of while loop that prints everything between $gp and $sp
+    }//end of while loop that prints everything between $gp and $sp*/
+}//end of print_data
 
-    //print everything between $sp and $fp
-    memoryIndex = 0;
-    while(GPR[1] + memoryIndex <= GPR[2]){
-        int tabIndex = 1;//max of 8 tabs
-        printString[0] = '\0';
-        tempString[0] = '\0';
+//determines the number of characters in an int
+int count_digits (int number){
+    char intAsString[20];
+    sprintf(intAsString, "%d", number);
+    return strlen(intAsString);
+}
 
-        for(int index = 0; index < MAX_STRING_LENGTH; index++){
-            if(GPR[1]+ memoryIndex > GPR[2]) break;
-            strcpy(tempString, (char*)(GPR[1] + memoryIndex));
-            int tempIndex = 0;
-            //fills in 8 indices of the printString preceding ':'
-            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(index < TAB_LENGTH - strlen(tempString))
-                    printString[index] = ' ';
-                else {
-                    printString[index] = tempString[tempIndex];
-                    tempIndex++;
-                }
-            }
-            tempIndex = 0;
-            tabIndex++;
-            //fills in indices of printString including and succeeding ':'
-            printString[index] = ':';
-            index++;
-            printString[index] = ' ';
-            strcpy(tempString, (char*)memory.words[GPR[1] + memoryIndex]);
-            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(tempIndex < strlen(tempString)){
-                    printString[index] = tempString[tempIndex];
-                    tempIndex++;
-                }
-                else printString[index] = ' ';
-            }
-            tabIndex++;
-            memoryIndex++;
-        }
-        printf("%s\n", printString);
-    }
-    printf("==>");
-    instruction_print(stdout, &memory.instrs[program_counter], current_instr); 
+//prints the current state of the memory stack
+//could be useful for debugging
+void print_state(bin_instr_t current_instr){
+    print_trace_header();
+    print_data(0);//print between $gp and $sp
+    print_data(1);//print between $sp and $fp
+    printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
+    printf("\n==>");
+    instruction_print(stdout, &memory.instrs[program_counter], current_instr);
+    printf("\n");
 }//end of print_state
