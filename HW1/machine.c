@@ -46,9 +46,11 @@ void initialize(BOFFILE bf){
     //return address register is index 7
 
     //these were throwing errors, please test corrected version
-    GPR = {0};
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        GPR[i] = 0;
+    }
+    
     program_counter = 0; 
-    memory = {0};
     
 
     //Benny 9/24- I think this should fix these inititializations
@@ -77,7 +79,7 @@ void initialize(BOFFILE bf){
     //Open the file
     // BOFFILE bof = bof_read_open(something);
 
-    // BOFHeader header = bof_read_header(bof);
+    BOFHeader header = bof_read_header(bf);
 
     //The starting address of the code is the initial value of the program counter (PC).
     program_counter = header.text_start_address;
@@ -153,9 +155,9 @@ void load_instructions(BOFFILE *f){
     //while not at the end and number of instructions did not exceed memory
     while (!bof_at_eof(*f) && num_instr <= MEMORY_SIZE_IN_WORDS) {
         printf("%d", num_instr);
-        if(ftell(f->fileptr) == end){
+        if(ftell(f->fileptr) == EOF){
             printf("\nReached the end of the file");
-            printf("%ld %d", ftell(f->fileptr), end);
+            printf("%ld %d", ftell(f->fileptr), EOF);
             break;
         }
         bin_instr_t instr = instruction_read(*f);
@@ -244,7 +246,8 @@ void execute(bin_instr_t bi){
                     bail_with_error("Illegal Comp Instruction");
                     break;
             }
-            program_counter++;
+ program_counter++;
+
         }//end of comp_instr_t case
         //Benny
         case other_comp_instr_type:
@@ -323,7 +326,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_counter++;
+        program_counter++;
         }
         //Madigan
         case syscall_instr_type:
@@ -354,7 +357,7 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_counter++;
+        program_counter++;
         }
 
         //Wesley
@@ -493,7 +496,8 @@ void execute(bin_instr_t bi){
                     break;
                 }
             }
-            program_couter++;
+
+            program_counter++;
         }
 
         //Benny
@@ -528,8 +532,9 @@ void execute(bin_instr_t bi){
             bail_with_error("Illegal Instruction Type");
             break;
         }
+
     }
-    char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
+    // char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
 
 //puts the functionality of all the previous functions together
@@ -537,7 +542,7 @@ void execute(bin_instr_t bi){
 //call init, open, load, execute and trace 
 void run(const char *filename){
 
-    printf("Run has been called\n");
+    printf("Run has been called\n\n");
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
@@ -547,10 +552,13 @@ void run(const char *filename){
     initialize(bf);
 
     //Loading Instructions
-    load_instructions(&bof);
+    load_instructions(&bf);
 
     //Execute Loop
-
+    int i = 0;
+    while (i < MEMORY_SIZE_IN_WORDS) {
+        execute(memory.instrs[i]);
+    }
 
 
     // FILE *out_file = fopen("out_file.txt", "w");
@@ -666,6 +674,7 @@ void print_command (const char *filename){
     return instr;
 }*/
 
+
 //prints the current state of the memory stack
 //could be useful for debugging
 void print_state(bin_instr_t current_instr, int currentPC){
@@ -703,7 +712,7 @@ void print_state(bin_instr_t current_instr, int currentPC){
         for(int index = 0; index < MAX_STRING_LENGTH; index++){
             if(GPR[0]+ memoryIndex == GPR[1]) break;
             strcpy(tempString, (char*)(GPR[0] + memoryIndex));
-            int tempStringLenth = strlen(tempString);
+            int tempStringLength = strlen(tempString);
             int tempIndex = 0;
             //fills in 8 indices of the printString preceding ':'
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
@@ -723,9 +732,9 @@ void print_state(bin_instr_t current_instr, int currentPC){
             index++;
             printString[index] = ' ';
             strcpy(tempString, (char*)memory.words[GPR[0] + memoryIndex]);
-            tempStringLenth = strlen(tempString);
+            tempStringLength = strlen(tempString);
             for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(tempIndex < tempStringLength)){
+                if(tempIndex < tempStringLength){
                     printString[index] = tempString[tempIndex];
                     tempIndex++;
                 }
