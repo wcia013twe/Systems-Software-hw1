@@ -28,6 +28,10 @@ static union mem_u{
 int GPR[NUM_REGISTERS];
 int program_counter, HI, LO;
 
+//booleans
+boolean tracing = false;
+boolean halt = false;
+
 //Data Dictionary
 int32_t HI = 0;
 int32_t LO = 0;
@@ -51,6 +55,7 @@ void initialize(BOFFILE bf){
     }
     
     program_counter = 0; 
+
     
 
     //Benny 9/24- I think this should fix these inititializations
@@ -556,8 +561,12 @@ void run(const char *filename){
 
     //Execute Loop
     int i = 0;
-    while (i < MEMORY_SIZE_IN_WORDS) {
-        execute(memory.instrs[i]);
+    bin_instr_t bin = blankInstr;
+    while (!halt) {
+        bin = memory.instrs[program_counter];
+        program_counter++;
+        execute(bin);
+        print_state(bin);
     }
 
 
