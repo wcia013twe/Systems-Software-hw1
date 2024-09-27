@@ -31,6 +31,10 @@ static union mem_u{
 int GPR[NUM_REGISTERS];
 int program_counter, HI, LO;
 
+//booleans
+boolean tracing = false;
+boolean halt = false;
+
 //Data Dictionary
 int32_t HI = 0;
 int32_t LO = 0;
@@ -63,6 +67,7 @@ void initialize(BOFFILE bf){
     }
     
     program_counter = 0; 
+
     
 
     //Benny 9/24- I think this should fix these inititializations
@@ -632,16 +637,13 @@ void run(const char *filename){
     //print instructions (for debugging)
     print_instructions();
 
-    //Execute Loop
-    int i=6;
-    for(int i=0; i<num_instr; i++){
-        bin_instr_t *ptr = &memory.instrs[i];
-    uintptr_t add = (uintptr_t)ptr;
-    unsigned int int_add = (unsigned int)add;
-    printf("\n");
-    instruction_print(stdout, int_add, memory.instrs[i]);
-    printf("\n");
-    execute(memory.instrs[i]);
+    int i = 0;
+    bin_instr_t bin = blankInstr;
+    while (!halt) {
+        bin = memory.instrs[program_counter];
+        program_counter++;
+        execute(bin);
+        print_state(bin);
     }
     //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
         //execute(memory.instrs[i]);
