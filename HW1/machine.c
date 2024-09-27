@@ -49,7 +49,7 @@ void initialize(BOFFILE bf){
     GPR = {0};
     program_counter = 0; 
     memory = {0};
-    */
+    
 
     //Benny 9/24- I think this should fix these inititializations
     //GPR initializations
