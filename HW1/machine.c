@@ -523,24 +523,37 @@ void execute(bin_instr_t bi){
 //works as the main function of this file
 //call init, open, load, execute and trace 
 void run(const char *filename){
-    FILE *out_file = fopen("out_file.txt", "w");
-    printf("run has been called");
-    BOFFILE *f = open_file(filename);
-    //Caitlin comment 9/26: a print_state needs to happen somewhere
-    //around here prior to executing any instructions
-    //e.g.
-    print_state(null, -1);
-    load_instructions(f);
-    for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
-        //instr_type t = instruction_type(memory.instrs[i]);
-        //printf("%d", t);
-        bin_instr_t *ptr = &memory.instrs[i];
-        uintptr_t add = (uintptr_t)ptr;
-        unsigned int int_add = (unsigned int)add;
-        fprintf(out_file, "%d    ", i);
-        instruction_print(out_file, int_add, memory.instrs[i]);
-    }
-    fclose(out_file);
+
+    printf("Run has been called\n");
+
+    //Opening BOFFILE
+    BOFFILE bf = bof_read_open(filename);
+    BOFHeader bf_header = bof_read_header(bf);
+
+    //Initializing
+    initialize(bf);
+
+    //Loading Instructions
+    load_instructions(&bof);
+
+    //Execute Loop
+
+
+
+    // FILE *out_file = fopen("out_file.txt", "w");
+    // printf("run has been called");
+    // BOFFILE *f = open_file(filename);
+    // load_instructions(f);
+    // for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
+    //     //instr_type t = instruction_type(memory.instrs[i]);
+    //     //printf("%d", t);
+    //     bin_instr_t *ptr = &memory.instrs[i];
+    //     uintptr_t add = (uintptr_t)ptr;
+    //     unsigned int int_add = (unsigned int)add;
+    //     fprintf(out_file, "%d    ", i);
+    //     instruction_print(out_file, int_add, memory.instrs[i]);
+    // }
+    // fclose(out_file);
 }
 
 //when given the "-p" flag, prints out the instructions as written
