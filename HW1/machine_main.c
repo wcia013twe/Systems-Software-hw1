@@ -10,14 +10,18 @@ int main(int argc, char *argv[]) {
     const char *command = argv[0];
 
     //Two args present, check for -p
-    if(argc == 2) {
-        if (strcmp(argv[0], "-p") == 0)
-            print_command(argv[1]);
+    if(argc == 3) {
+        if (strcmp(argv[1], "-p") == 0) {
+
+            FILE* out = stdout;
+            disasmProgram(out, bof_read_open(argv[2]));
+        }
     }
 
     //Only one arg present, should be file location
-    else if (argc == 1) {
-        run(argv[0]);
+    else if (argc == 2) {
+        printf("%s", argv[1]);
+        run(argv[1]);
     }
 
     //Other than one or two args, run usage

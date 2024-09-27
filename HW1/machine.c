@@ -579,9 +579,9 @@ void run(const char *filename){
 
 //when given the "-p" flag, prints out the instructions as written
 void print_command (const char *filename){
-    BOFFILE *f = open_file(filename);
-    load_instructions(f);
-    disasmProgram(stdout, *f);
+    // BOFFILE *f = open_file(filename);
+    // load_instructions(f);
+    // disasmProgram(stdout, *f);
 }
 
 //converts the instruction to a string
