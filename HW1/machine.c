@@ -174,34 +174,11 @@ void load_instructions(BOFFILE *f){
         memory.instrs[i] = instruction_read(*f);
     }
 
-    /*
-    if(f->fileptr == NULL){
-        printf("fileptr null");
+    int data_count = header.data_length;
+    int start = header.data_start_address;
+    for(int i=0; i<data_count; i++){
+        memory.words[start+i] = bof_read_word(*f);
     }
-    if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
-        printf("file pointer not at beginning");
-    }
-    fseek(f->fileptr,0,SEEK_END); //move ptr to end
-    int end = ftell(f->fileptr); //tell me where the ptr is
-
-    fseek(f->fileptr, 0, SEEK_SET); //move ptr back to beginning
-    while (num_instr <= MEMORY_SIZE_IN_WORDS) {
-        printf("%d", num_instr);
-        if(ftell(f->fileptr) == end){
-            printf("Reached the end of the file");
-            printf("%ld %d", ftell(f->fileptr), end);
-            break;
-        }
-        bin_instr_t instr = instruction_read(*f);
-        //puts the bin_instr_t into memory at memory.instrs
-        memory.instrs[num_instr] = instr;
-        num_instr++;
-    }
-
-    if(num_instr >= MEMORY_SIZE_IN_WORDS){
-        bail_with_error("instr array full");
-    }
-    */
 }
 
 
@@ -368,7 +345,7 @@ void execute(bin_instr_t bi){
                 case print_char_sc:
                     {
                         int char_to_put = memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)];
-                        memory.words[GPR[SP]] = fputc(char_to_put, out_file);
+                        memory.words[GPR[SP]] = fputc(char_to_put, stdout);
                         break;
                     }
                 case read_char_sc:
