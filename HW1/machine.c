@@ -15,6 +15,7 @@
 #include "string.h"//do we need this twice?
 
 #define MEMORY_SIZE_IN_WORDS 32768
+#define BYTES_PER_WORD 4
 
 //out file
 FILE *out_file;
@@ -107,36 +108,6 @@ void initialize(BOFFILE bf){
     
 }
 
-
-
-//open bof and return BOFFILE object
-//Madigan 9/18
-// BOFFILE * open_file(const char *filename){
-
-//     BOFFILE *f = malloc(sizeof(BOFFILE));
-//     if (f == NULL) {
-//     bail_with_error("Memory allocation failed");
-//     }
-//     f->filename = filename;
-//     f->fileptr = fopen(f->filename, "rb");
-//     if (f->fileptr == NULL) {
-//     bail_with_error("Error opening file: %s", filename);
-//     }
-
-//     return f;
-// }
-
-// BOFFILE *open_file(const char *filename) {
-//     BOFFILE *bof = malloc(sizeof(BOFFILE));
-//     *bof = bof_read_open(filename);
-//     if (bof == NULL) {
-//         bail_with_error("Memory allocation failed");
-//         exit(EXIT_FAILURE);
-//     }
-
-//     return bof;
-// }
-
 //read/decode and put instructions into memory
 //will probably use a lot from instructions file
 /*
@@ -189,8 +160,21 @@ void load_instructions(BOFFILE *f){
 
 void load_instructions(BOFFILE *f){
 
-    //should initialize PC to val specified in bof here
+    if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
+        printf("file pointer not at beginning");
+    }
+    BOFHeader header = bof_read_header(*f);
 
+    int count = header.text_length;
+    printf("header text len: %d", header.text_length);
+
+    printf("count: %d", count);
+
+    for(int i=0; i<count; i++){
+        memory.instrs[i] = instruction_read(*f);
+    }
+
+    /*
     if(f->fileptr == NULL){
         printf("fileptr null");
     }
@@ -217,6 +201,7 @@ void load_instructions(BOFFILE *f){
     if(num_instr >= MEMORY_SIZE_IN_WORDS){
         bail_with_error("instr array full");
     }
+    */
 }
 
 
@@ -381,11 +366,13 @@ void execute(bin_instr_t bi){
             switch(syscalli.code){
                 case print_char_sc:
                     {
-                        memory.words[GPR[SP]] = fputc(memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)], out_file);
+                        int char_to_put = memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)];
+                        memory.words[GPR[SP]] = fputc(char_to_put, out_file);
                         break;
                     }
                 case read_char_sc:
                     {
+                        int char_to_read = getc(stdin);
                         memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)] = getc(stdin);
                         break;
                     }
