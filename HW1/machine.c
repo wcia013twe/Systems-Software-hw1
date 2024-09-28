@@ -845,7 +845,6 @@ void print_state(bin_instr_t current_instr){
     if (program_counter != 0) {
         printf("\n==>");
         instruction_print(stdout, program_counter-1, current_instr);
-        printf("\n");
     }
 
     if (!halt) {
