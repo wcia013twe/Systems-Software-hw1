@@ -166,9 +166,9 @@ void load_instructions(BOFFILE *f){
     BOFHeader header = bof_read_header(*f);
 
     int count = header.text_length;
-    printf("header text len: %d", header.text_length);
+    printf("header text len: %d\n", header.text_length);
 
-    printf("count: %d", count);
+    printf("count: %d\n\n", count);
 
     for(int i=0; i<count; i++){
         memory.instrs[i] = instruction_read(*f);
@@ -234,6 +234,7 @@ void execute(bin_instr_t bi){
             //look in enum for func0_code
             switch(compi.func){
                 case NOP_F:
+                    printf("\nan NOP_F command was run\n");
                     break;
                 case ADD_F:
                     //Benny Comment 9-25 : changed all "formOffset" to "machine_types_formOffset" (easy to mistake function)
@@ -582,7 +583,7 @@ void print_instructions(){
         bin_instr_t *ptr = &memory.instrs[i];
         uintptr_t add = (uintptr_t)ptr;
         unsigned int int_add = (unsigned int)add;
-        if(add == 0){
+        if(add == 0 || instruction_type(*ptr) == comp_instr_type && ptr->comp.op == 0){
             continue;
         }
     instruction_print(out_file, int_add, memory.instrs[i]);
@@ -615,12 +616,15 @@ void run(const char *filename){
     //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
     print_state(bin);
+    // instruction_print(stdout, 0, memory.instrs[0]);
     
+    program_counter = 0;
     while (!halt) {
         bin = memory.instrs[program_counter];
         program_counter++;
         execute(bin);
         print_state(bin);
+
     }
     //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
         //execute(memory.instrs[i]);
@@ -858,13 +862,20 @@ int count_digits (int number){
 }
 
 //prints the current state of the memory stack
-//could be useful for debugging
+//could be useful for debugging - Benny: Changed for initial state usage
 void print_state(bin_instr_t current_instr){
-    print_trace_header();
-    print_data(0);//print between $gp and $sp
-    print_data(1);//print between $sp and $fp
-    printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
-    printf("\n==>");
-    instruction_print(stdout, &memory.instrs[program_counter], current_instr);
-    printf("\n");
-}//end of print_state
+
+    if (program_counter != 0) {
+        printf("\n==>");
+        instruction_print(stdout, program_counter-1, current_instr);
+        printf("\n");
+    }
+
+    if (!halt) {
+        print_trace_header();
+        print_data(0);//print between $gp and $sp
+        print_data(1);//print between $sp and $fp
+        printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
+   }
+    
+    }//end of print_state
