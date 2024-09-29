@@ -34,7 +34,7 @@ int program_counter, HI, LO;
 
 
 //booleans
-bool tracing = false;
+bool tracing = true;
 bool halt = false;
 
 //Data Dictionary
@@ -342,6 +342,11 @@ void execute(bin_instr_t bi){
             syscall_instr_t syscalli = bi.syscall;
             //look in enum for syscall_type
             switch(syscalli.code){
+                case print_str_sc:
+                    {
+                        memory.words[GPR[SP]] = printf("%s", &memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        break;
+                    }
                 case print_char_sc:
                     {
                         int char_to_put = memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)];
@@ -446,7 +451,7 @@ void execute(bin_instr_t bi){
                     then PC ←(PC −1) + formOffset(i)
                     */
                     {
-                        if(memory.words[GPR[SP]] == GPR[immedi.reg] + machine_types_formOffset(immedi.offset)){
+                        if(memory.words[GPR[SP]] == (memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.offset)])) {
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
                         };
                         break;
@@ -592,15 +597,24 @@ void run(const char *filename){
 
     //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
-    print_state(bin);
+    print_memory_state(bin);
     // instruction_print(stdout, 0, memory.instrs[0]);
     
     program_counter = 0;
     while (!halt) {
         bin = memory.instrs[program_counter];
         program_counter++;
+
+        //Tracing / Program State
+        if (tracing)
+            print_current_instruction(bin);
+
+        //Executing Instruction
         execute(bin);
-        print_state(bin);
+
+        //Printing Memory State
+        if (tracing)
+            print_memory_state(bin);
 
     }
     //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
@@ -729,42 +743,42 @@ void print_trace_header(){
     if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
     printf("\n");
 
-    printf("GPR[$gp]: %4d\tGPR[$sp]: %4d\tGPR[$fp]: %4d\tGPR[$r3]: %4d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
-    printf("GPR[$r4]: %4d\nGPR[$r5]: %4d\tGPR[$r6]: %4d\tGPR[$ra]: %4d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
+    printf("GPR[$gp]: %d\tGPR[$sp]: %d\tGPR[$fp]: %d\tGPR[$r3]: %d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
+    printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
 }//end of print_trace_header
 
 //prints data from the GPR[GPRindex] to GPR[GPRindex+1] exclusive of GPR[GPRindex+1]
-void print_data(int GPRindex){
-    //variable to keep track of the offset from the GPRindex
-    int memoryOffset = 0;
+    // void print_data(int GPRindex){
+    //     //variable to keep track of the offset from the GPRindex
+    //     int memoryOffset = 0;
 
-    //variable to keep track of characters in a line
-    //can't exceed 69
-    int numChars = 0;
-    while(memory.words[GPR[GPRindex] + memoryOffset] != memory.words[GPR[GPRindex+1]]){
-        //skips printing if all 0s until the next nonzero-value or the end of the loop
-        //the first condition prevents inadvertently accessing an instr
-        //the second and third conditions ensure the first zero is printed and only
-        //consecutive 0s are skipped
-        if((memoryOffset > 1) && (memory.words[GPR[GPRindex] + memoryOffset] == 0) && (memory.words[GPR[GPRindex] + memoryOffset - 1] == 0)){
-            //prints ellipse iff the next value is nonzero or the end of the loop
-            //will be reached on the next iteration
-            if((GPR[GPRindex] + memoryOffset + 1 == GPR[GPRindex + 1]) || (memory.words[GPR[GPRindex] + memoryOffset + 1] != 0)){
-                printf("        ...     \n");
-            }
-            memoryOffset++;
-            continue;
-        }//end of zeroes logic
-        
-        //determines if a newline will need to be printed
-        numChars = numChars + 10 + count_digits(memory.words[GPR[GPRindex] + memoryOffset]);
-        if(numChars > 69){
-            printf("\n");
-            numChars = 0;
-        }
-        printf("    %4d: %d\t", (GPR[GPRindex] + memoryOffset), memory.words[GPR[GPRindex] + memoryOffset]);
-        memoryOffset++;
-    }
+    //     //variable to keep track of characters in a line
+    //     //can't exceed 69
+    //     int numChars = 0;
+    //     while(memory.words[GPR[GPRindex] + memoryOffset] != memory.words[GPR[GPRindex+1]]){
+    //         //skips printing if all 0s until the next nonzero-value or the end of the loop
+    //         //the first condition prevents inadvertently accessing an instr
+    //         //the second and third conditions ensure the first zero is printed and only
+    //         //consecutive 0s are skipped
+    //         if((memoryOffset > 1) && (memory.words[GPR[GPRindex] + memoryOffset] == 0) && (memory.words[GPR[GPRindex] + memoryOffset - 1] == 0)){
+    //             //prints ellipse iff the next value is nonzero or the end of the loop
+    //             //will be reached on the next iteration
+    //             if((GPR[GPRindex] + memoryOffset + 1 == GPR[GPRindex + 1]) || (memory.words[GPR[GPRindex] + memoryOffset + 1] != 0)){
+    //                 printf("        ...     \n");
+    //             }
+    //             memoryOffset++;
+    //             continue;
+    //         }//end of zeroes logic
+            
+    //         //determines if a newline will need to be printed
+    //         numChars = numChars + 10 + count_digits(memory.words[GPR[GPRindex] + memoryOffset]);
+    //         if(numChars > 69){
+    //             printf("\n");
+    //             numChars = 0;
+    //         }
+    //         printf("    %4d: %d\t", (GPR[GPRindex] + memoryOffset), memory.words[GPR[GPRindex] + memoryOffset]);
+    //         memoryOffset++;
+    //     }
    /*
     
     
@@ -829,7 +843,54 @@ void print_data(int GPRindex){
         }
         printf("%s\n", printString);
     }//end of while loop that prints everything between $gp and $sp*/
-}//end of print_data
+// }//end of print_data
+
+
+void print_memory_range(int start, int end) {
+
+    // printf("\nstart: %d, end: %d\n", start, end);
+
+    int tracker = start;
+    int num_zeros = 0;
+    int num_chars = 0;
+
+    if (start == end) {
+        printf("    %4d: %d\t", tracker, memory.words[tracker]);
+        return;
+    }
+        
+
+    while (tracker < end) {
+
+        num_chars = num_chars + 10 + count_digits(memory.words[tracker]);
+        if(num_chars > 69){
+            printf("\n");
+            num_chars = 0;
+        }
+
+        if (num_zeros > 0 && memory.words[tracker] == 0) {
+            
+            while (memory.words[tracker] == 0 && tracker < end)
+                tracker++;
+
+            num_zeros == 0;
+            printf("        ...     \n");
+        }
+        
+        if (tracker < end) {
+            printf("    %4d: %d\t", tracker, memory.words[tracker]);
+            num_zeros = 0;
+        }
+
+        if (memory.words[tracker] == 0)
+            num_zeros++;
+        
+        tracker++;
+    } 
+
+    printf("\n");
+
+}
 
 //determines the number of characters in an int
 int count_digits (int number){
@@ -838,20 +899,26 @@ int count_digits (int number){
     return strlen(intAsString);
 }
 
-//prints the current state of the memory stack
-//could be useful for debugging - Benny: Changed for initial state usage
-void print_state(bin_instr_t current_instr){
-
+void print_current_instruction(bin_instr_t current_instr) {
     if (program_counter != 0) {
         printf("\n==>");
         instruction_print(stdout, program_counter-1, current_instr);
     }
+}
+
+//prints the current state of the memory stack
+//could be useful for debugging - Benny: Changed for initial state usage
+void print_memory_state(bin_instr_t current_instr){
 
     if (!halt) {
         print_trace_header();
-        print_data(0);//print between $gp and $sp
-        print_data(1);//print between $sp and $fp
-        printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
+        // print_data(GP);//print between $gp and $sp
+        // print_data(SP);//print between $sp and $fp
+
+        print_memory_range(GPR[GP], GPR[SP]);
+        print_memory_range(GPR[SP], GPR[FP]+1);
+        printf("\n");
+        // printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
    }
     
-    }//end of print_state
+}//end of print_state

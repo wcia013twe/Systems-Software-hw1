@@ -1,12 +1,38 @@
- 4235392: STRA 
- 4235396: SRI $sp, 2
- 4235400: ADDI $sp, 1, 1
- 4235416: ADDI $sp, 0, 10
+ 4235392: NOTR 
+ 4235396: STRA 
+ 4235400: ADDI $sp, 0, 5
+ 4235404: ADDI $sp, -1, 2
+ 4235408: ARI $sp, -1
+ 4235416: MUL $sp, 1
  4235420: SRI $sp, 1
- 4235424: NOTR 
- 4235428: PCH $gp, 0
- 4235432: PCH $gp, 3
- 4235436: EXIT 0
- 4239488: BGTZ $ra, 0, 0	# target is word address 4239488
- 4239492: CALL 6	# target is word address 6
- 4239500: BLEZ $gp, 0, 0	# target is word address 4239500
+ 4235424: CFLO $sp, 0
+ 4235432: MUL $sp, 2
+ 4235436: SRI $sp, 1
+ 4235440: CFLO $sp, 0
+ 4235444: SRI $sp, 1
+ 4235452: DIV $sp, 4
+ 4235456: SRI $sp, 2
+ 4235460: CFLO $sp, 0
+ 4235464: CFHI $sp, 1
+ 4235468: SRI $sp, 1
+ 4235472: ADDI $sp, 0, 5
+ 4235476: BEQ $sp, 1, 2	# target is word address 4235478
+ 4235480: CALL 35	# target is word address 35
+ 4235484: CALL 31	# target is word address 31
+ 4235488: ARI $sp, 1
+ 4235496: ADDI $sp, 0, 3
+ 4235500: BEQ $sp, 1, 2	# target is word address 4235502
+ 4235504: CALL 35	# target is word address 35
+ 4235508: CALL 31	# target is word address 31
+ 4235512: EXIT 0
+ 4235516: NOTR 
+ 4235520: PSTR $gp, 0
+ 4235524: STRA 
+ 4235528: RTN 
+ 4235532: NOTR 
+ 4235536: PSTR $gp, 1
+ 4235540: STRA 
+ 4235544: EXIT 1
+ 4235548: RTN 
+ 4237440: BGTZ $ra, 20, 0	# target is word address 4237440
+ 4237444: CALL 42742	# target is word address 42742
