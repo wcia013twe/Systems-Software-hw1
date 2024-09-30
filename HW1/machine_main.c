@@ -13,8 +13,7 @@ int main(int argc, char *argv[]) {
     if(argc == 3) {
         if (strcmp(argv[1], "-p") == 0) {
 
-            FILE* out = stdout;
-            print_program(argv[2]);
+            print_command(argv[2]);
             // disasmProgram(out, bof_read_open(argv[2]));
         }
     }

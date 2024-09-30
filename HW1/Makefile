@@ -78,7 +78,7 @@ check-lst-outputs check-asm-outputs:
 	do \
 		echo listing "$$f.bof" using ./vm -p ...; \
 		./vm -p "$$f.bof" > "$$f.myp" 2>&1; \
-		diff -w -B "$$f.lst" "$$f.myp" && echo 'passed!' \
+		diff --side-by-side -w -B "$$f.lst" "$$f.myp" && echo 'passed!' \
 			|| { echo 'failed!'; DIFFS=1; }; \
 	done; \
 	if test 0 = $$DIFFS; \

@@ -560,6 +560,65 @@ void execute(bin_instr_t bi){
     // char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
 
+//when given the "-p" flag, prints out the instructions as written
+//when given the "-p" flag, prints out the instructions as written
+//Wes
+void print_command (const char *filename){
+
+    //Opening BOFFILE
+    BOFFILE bf = bof_read_open(filename);
+    BOFHeader bf_header = bof_read_header(bf);
+
+    //Check its valid bof
+    if(!bof_has_correct_magic_number(bf_header)){
+        bail_with_error("Error: Incorrect magic number in file: %s\n", filename);
+    };
+
+    //prints "Address Instruction"
+    instruction_print_table_heading(stdout);
+
+    address_type addr = bf_header.text_start_address;
+
+    /*
+        While not at the end of the file
+            -get the instruction
+            -print the instruction
+    
+    */
+    while (!bof_at_eof(bf)) {
+        bin_instr_t instr = instruction_read(bf);
+
+
+        /*
+            This is where I am trying to tell the program to exit when EXIT is called,
+            I've yet to make this work but bof_read_word but it should start from each register
+            and print the address, memory with formatting.
+        */
+        
+        instruction_print(stdout, addr, instr);
+        if(instruction_type(instr) == syscall_instr_type && instruction_syscall_number(instr) == exit_sc){
+            int dataLength = bf_header.data_length; 
+            address_type address = bf_header.text_start_address;
+            while(dataLength >= 1){
+                //print the data address
+                int value = bof_read_word(bf);
+                printf("%d: %d\t", address, value);
+                dataLength--;
+                address++;
+            }
+            //attach flag: I dont understand why sometimes there is a 1 at the end of the lsts
+            //seems to be some kind of flag but not sure
+
+            printf("        ...     \n");
+            break;
+        }
+        addr += 1; //jump to the next instruction
+    }
+    
+    bof_close(bf);
+    exit(EXIT_SUCCESS);
+}
+
 void print_instructions(){
     int num_instrs = 0;
     for(int i=0; i<MEMORY_SIZE_IN_WORDS; i++){
