@@ -9,16 +9,17 @@ int main(int argc, char *argv[]) {
 
     const char *command = argv[0];
 
-    //Two args present, check for -p
+    //Three args present, check for -p
     if(argc == 3) {
         if (strcmp(argv[1], "-p") == 0) {
 
             FILE* out = stdout;
-            disasmProgram(out, bof_read_open(argv[2]));
+            print_program(argv[2]);
+            // disasmProgram(out, bof_read_open(argv[2]));
         }
     }
 
-    //Only one arg present, should be file location
+    //Two arg present, should be file location
     else if (argc == 2) {
         printf("%s", argv[1]);
         run(argv[1]);
@@ -26,7 +27,6 @@ int main(int argc, char *argv[]) {
 
     //Other than one or two args, run usage
     else {
-
         void usage(const char *cmdname);
 
     }
