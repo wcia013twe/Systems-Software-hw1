@@ -561,14 +561,16 @@ void execute(bin_instr_t bi){
 }
 
 void print_instructions(){
+    int num_instrs = 0;
     for(int i=0; i<MEMORY_SIZE_IN_WORDS; i++){
         bin_instr_t *ptr = &memory.instrs[i];
-        uintptr_t add = (uintptr_t)ptr;
-        unsigned int int_add = (unsigned int)add;
-        if(add == 0 || instruction_type(*ptr) == comp_instr_type && ptr->comp.op == 0){
+        // uintptr_t add = (uintptr_t)ptr;
+        // unsigned int int_add = (unsigned int)add;
+        if(instruction_type(*ptr) == comp_instr_type && ptr->comp.op == 0){
             continue;
         }
-    instruction_print(out_file, int_add, memory.instrs[i]);
+        instruction_print(stdout, num_instrs, memory.instrs[i]);
+        num_instrs++;
     }
 }
 
@@ -593,7 +595,7 @@ void run(const char *filename){
     load_instructions(&bf);
 
     //print instructions (for debugging)
-    print_instructions();
+    // print_instructions();
 
     //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
@@ -639,10 +641,25 @@ void run(const char *filename){
 }
 
 //when given the "-p" flag, prints out the instructions as written
-void print_command (const char *filename){
-    // BOFFILE *f = open_file(filename);
-    // load_instructions(f);
-    // disasmProgram(stdout, *f);
+void print_program (const char *filename){
+
+    //Opening BOFFILE
+    BOFFILE bf = bof_read_open(filename);
+
+    //Initializing
+    initialize(bf);
+
+    //Loading Instructions
+    load_instructions(&bf);
+    
+
+    //Print Header
+    instruction_print_table_heading(stdout);
+
+    //Printing Instructions
+    print_instructions();
+
+    //Print Data Section
 }
 
 //converts the instruction to a string
@@ -853,6 +870,7 @@ void print_memory_range(int start, int end) {
     int tracker = start;
     int num_zeros = 0;
     int num_chars = 0;
+    int print_ellipse = 0;
 
     if (start == end) {
         printf("    %4d: %d\t", tracker, memory.words[tracker]);
@@ -861,12 +879,7 @@ void print_memory_range(int start, int end) {
         
 
     while (tracker < end) {
-
-        num_chars = num_chars + 10 + count_digits(memory.words[tracker]);
-        if(num_chars > 69){
-            printf("\n");
-            num_chars = 0;
-        }
+        print_ellipse = 0;
 
         if (num_zeros > 0 && memory.words[tracker] == 0) {
             
@@ -874,8 +887,18 @@ void print_memory_range(int start, int end) {
                 tracker++;
 
             num_zeros == 0;
-            printf("        ...     \n");
+            num_chars += 16;
+            print_ellipse = 1;
         }
+
+        num_chars = num_chars + 10 + count_digits(memory.words[tracker]);
+        if(num_chars > 69){
+            printf("\n");
+            num_chars = 0;
+        }
+
+        if (print_ellipse == 1)
+            printf("        ...     ");
         
         if (tracker < end) {
             printf("    %4d: %d\t", tracker, memory.words[tracker]);
@@ -901,7 +924,7 @@ int count_digits (int number){
 
 void print_current_instruction(bin_instr_t current_instr) {
     if (program_counter != 0) {
-        printf("\n==>");
+        printf("==>");
         instruction_print(stdout, program_counter-1, current_instr);
     }
 }

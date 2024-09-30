@@ -387,7 +387,7 @@ void instruction_print_table_heading(FILE *out) {
 // Print addr on out, ": ", then the instruction's symbolic
 // (assembly language) form, and finally a newline character (all on one line)
 void instruction_print(FILE *out, address_type addr, bin_instr_t instr) {
-    fprintf(out, "%8u: %s\n", addr, instruction_assembly_form(addr, instr));
+    fprintf(out, "%7u: %s\n", addr, instruction_assembly_form(addr, instr));
 }
 
 // Return the mnemonic for the given system call code
@@ -413,8 +413,7 @@ const char *instruction_syscall_mnemonic(syscall_type code)
 	return "NOTR";
 	break;
     default:
-	bail_with_error("Unknown code (%u) in instruction_syscall_mnemonic",
-			code);
+	bail_with_error("Unknown code (%u) in instruction_syscall_mnemonic", code);
 	return "NEVERHAPPENS";
 	break;
     }
@@ -473,8 +472,7 @@ const char *instruction_compFunc2name(bin_instr_t bi) {
 	return "NEG";
 	break;
     default:
-	bail_with_error("Unknown function code (%d) in instruction_compFunc2name",
-			bi.comp.func);
+	bail_with_error("Unknown function code (%d) in instruction_compFunc2name", bi.comp.func);
 	break;
     }
     return NULL; // should never happen
@@ -525,8 +523,7 @@ const char *instruction_otherCompFunc2name(bin_instr_t bi) {
 	return instruction_syscall_mnemonic(instruction_syscall_number(bi));
 	break;
     default:
-	bail_with_error("Unknown function code (%d) in instruction_otherCompFunc2name",
-			bi.comp.func);
+	bail_with_error("Unknown function code (%d) in instruction_otherCompFunc2name", bi.comp.func);
 	break;
     }
     return NULL; // should never happen
@@ -556,8 +553,7 @@ syscall_type instruction_token2SyscallCode(int toknum)
 	return stop_tracing_sc;
 	break;
     default:
-	bail_with_error("Unlnown token type in instruction_token2SyscallCode: %d",
-			toknum);
+	bail_with_error("Unlnown token type in instruction_token2SyscallCode: %d", toknum);
 	return 0; // should never happen
 	break;
     }

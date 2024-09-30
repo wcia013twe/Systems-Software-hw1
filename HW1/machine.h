@@ -10,7 +10,7 @@
 extern void run(const char *filename);
 
 //prints the instructions provided without executing
-void print_command (const char *filename);
+void print_program (const char *filename);
 
 void load_instructions(BOFFILE *f);
 #endif
