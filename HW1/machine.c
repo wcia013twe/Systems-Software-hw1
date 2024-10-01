@@ -56,7 +56,6 @@ void initialize(BOFFILE bf){
     
     program_counter = 0; 
 
-    //Benny 9/24- I think this should fix these inititializations
     //GPR initializations
     for (int i = 0; i < NUM_REGISTERS; i++)
         GPR[i] = 0;
@@ -77,8 +76,6 @@ void initialize(BOFFILE bf){
         memory.instrs[i] = blankInstr;
     }
 
-    // const char* something;
-
     //Open the file
     // BOFFILE bof = bof_read_open(something);
     if (fseek(bf.fileptr, 0, SEEK_SET) != 0) {
@@ -94,13 +91,7 @@ void initialize(BOFFILE bf){
 
     //The starting address of the data section is the address of the first element of the data section and the initial value of the $gp register
     GPR[SP] = header.stack_bottom_addr;
-    GPR[FP] = header.stack_bottom_addr;
-
-    // load_instructions(&bof);
-
-    // bof_close(bof);
-    // free(bof); not needed for non-pointer
-    
+    GPR[FP] = header.stack_bottom_addr; 
 }
 
 void load_instructions(BOFFILE *f){
@@ -126,7 +117,6 @@ void load_instructions(BOFFILE *f){
 
 //do what the instruction says
 //move fp, sp and pc as needed
-//will need extra stack management functionsk
 void push(word_type value) {
     if (GPR[SP] >= MEMORY_SIZE_IN_WORDS) {
         bail_with_error("Stack overflow");
@@ -142,21 +132,15 @@ word_type pop() {
 }
 
 void execute(bin_instr_t bi){
-
-    //we'll probably need to open the file and load the instructions
-    //but that could also happen in the run
     switch(instruction_type(bi)){
-       //Caitlin
         case comp_instr_type:
         {
             comp_instr_t compi = bi.comp;
-            //look in enum for func0_code
             switch(compi.func){
                 case NOP_F:
                     printf("\nan NOP_F command was run\n");
                     break;
                 case ADD_F:
-                    //Benny Comment 9-25 : changed all "formOffset" to "machine_types_formOffset" (easy to mistake function)
                     memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[GPR[1]] + memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 case SUB_F:
@@ -190,7 +174,6 @@ void execute(bin_instr_t bi){
                     memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[memory.words[GPR[compi.rs] +machine_types_formOffset(compi.os)]];
                     break;
                 case NEG_F:
-                    // Benny Comment 9-25 : unsure of use of ~, shouldnt this be a - or a -1 * memory.uwords[GPR[compi.rs]]?
                     memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = ~memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 default:
@@ -199,11 +182,9 @@ void execute(bin_instr_t bi){
             }
         break;
         }//end of comp_instr_t case
-        //Benny
         case other_comp_instr_type:
         {
             other_comp_instr_t othci = bi.othc;
-            //look in enum for func1_code
             switch(othci.func){
                 case LIT_F:
                     memory.words[GPR[othci.reg] + machine_types_formOffset(othci.offset)] = machine_types_sgnExt(othci.arg);
@@ -278,11 +259,9 @@ void execute(bin_instr_t bi){
             }
             break;
         }
-        //Madigan
         case syscall_instr_type:
         {
             syscall_instr_t syscalli = bi.syscall;
-            //look in enum for syscall_type
             switch(syscalli.code){
                 case print_str_sc:
                     {
@@ -324,18 +303,12 @@ void execute(bin_instr_t bi){
             break;
         }
 
-        //Wesley
         case immed_instr_type:
         {
             immed_instr_t immedi = bi.immed;
-            //look in enum for opcodes
             switch(immedi.op){
-                // case COMP_O:
-                // case OTHC_O:
                 case ADDI_O:
                     // ADD immediate:
-                    // memory[GPR[r] + formOffset(o)]
-                    // ←(memory[GPR[r] + formOffset(o)]) + sgnExt(i)
                     {
                         word_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
                         memory.words[address] += machine_types_sgnExt(immedi.immed);
@@ -344,19 +317,13 @@ void execute(bin_instr_t bi){
                     
                 case ANDI_O:
                     // Bitwise And immediate:
-                    // umemory[GPR[r] + formOffset(o)]
-                    // ←(umemory[GPR[r] + formOffset(o)]) ∧ zeroExt(i)
                     {
                         uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
                         memory.uwords[address] &= machine_types_zeroExt(immedi.immed);
                         break;
                     }
                 case BORI_O:
-                    /*
-                    Bitwise Or immediate:
-                    umemory[GPR[r] + formOffset(o)]
-                    ←(umemory[GPR[r] + formOffset(o)]) ∨zeroExt(i)
-                    */
+                     //Bitwise Or immediate:
                     {
                         uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
                         memory.uwords[address] |= machine_types_zeroExt(immedi.immed);
@@ -364,33 +331,21 @@ void execute(bin_instr_t bi){
                     }
 
                 case NORI_O:
-                    /*
-                    Bitwise Not-Or immediate:
-                    umemory[GPR[r] + formOffset(o)]
-                    ←¬(umemory[GPR[r] + formOffset(o)]) ∨zeroExt(i))
-                    */
+                    //Bitwise Not-Or immediate:
                     {
                         uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
                         memory.uwords[address] = !(memory.uwords[address] || machine_types_zeroExt(immedi.immed));
                         break;
                     }
                 case XORI_O:
-                    /*
-                    Bitwise Exclusive-Or immediate:
-                    umemory[GPR[r] + formOffset(o)]
-                    ←(umemory[GPR[r] + formOffset(o)]) xor zeroExt(i)
-                    */
+                    //Bitwise Exclusive-Or immediate:
                    {
                         uword_type address = GPR[immedi.reg] + machine_types_formOffset(immedi.offset);
                         memory.uwords[address] ^= machine_types_zeroExt(immedi.immed);
                         break;
                    }
                 case BEQ_O:
-                    /*
-                    Branch on Equal:
-                    if memory[GPR[$sp]] = memory[GPR[r] + formOffset(o)]
-                    then PC ←(PC −1) + formOffset(i)
-                    */
+                    //Branch on Equal:
                     {
                         if(memory.words[GPR[SP]] == (memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.offset)])) {
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
@@ -398,44 +353,28 @@ void execute(bin_instr_t bi){
                         break;
                     }
                 case BGEZ_O:
-                    /*
-                    Branch ≥0:
-                    if memory[GPR[r] + formOffset(o)] ≥0
-                    then PC ←(PC −1) + formOffset(i
-                    */
+                    //Branch ≥0:
                     {
                         if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) >= 0){
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
                         }
                     }
                 case BGTZ_O:
-                    /*
-                    Branch > 0:
-                    if memory[GPR[r] + formOffset(o)] > 0
-                    then PC ←(PC −1) + formOffset(i)
-                    */
+                    //Branch > 0:
                     {
                         if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) > 0){
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
                         }
                     }
                 case BLEZ_O:
-                    /*
-                    Branch ≤0:
-                    if memory[GPR[r] + formOffset(o)] ≤0
-                    then PC ←(PC −1) + formOffset(i
-                    */
+                    //Branch ≤0:
                     {
                         if(memory.words[GPR[immedi.reg]] + machine_types_formOffset(immedi.offset) <= 0){
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
                         }
                     }
                 case BLTZ_O:
-                    /*
-                    ranch < 0:
-                    if memory[GPR[r] + formOffset(o)] < 0
-                    then PC ←(PC −1) + formOffset(i)
-                    */
+                    //Branch < 0:
                     {
                       if(memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.immed)] < 0) {
                         program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
@@ -443,11 +382,7 @@ void execute(bin_instr_t bi){
                       break;
                     }
                 case BNE_O:
-                    /*
-                    Branch Not Equal:
-                    if memory[GPR[$sp]] ̸= memory[GPR[r] + formOffset(o)]
-                    then PC ←(PC −1) + formOffset(i)
-                    */
+                    //Branch Not Equal:
                     {
                         if(memory.words[GPR[SP]] != memory.words[GPR[immedi.reg] + machine_types_formOffset(immedi.offset)]){
                             program_counter = (program_counter - 1) + machine_types_formOffset(immedi.immed);
@@ -462,12 +397,9 @@ void execute(bin_instr_t bi){
             }
             break;
         }
-
-        //Benny
         case jump_instr_type:
         {
             jump_instr_t jump = bi.jump;
-            //look in enum for opcodes
             switch(jump.op){
                 case JMPA_O:
                     program_counter = machine_types_formAddress(program_counter - 1, jump.addr);
@@ -498,12 +430,10 @@ void execute(bin_instr_t bi){
         }
 
     }
-    // char toPrint[MEMORY_SIZE_IN_WORDS] = toString(bi);
 }
 
+//WE HAVE TWO OF THESE??? THIS AND print_program
 //when given the "-p" flag, prints out the instructions as written
-//when given the "-p" flag, prints out the instructions as written
-//Wes
 void print_command (const char *filename){
  
     //Opening BOFFILE
@@ -589,8 +519,6 @@ void print_instructions(const char* filename){
 void run(const char *filename){
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
-    //printf("trying to open header in run()");
-    //BOFHeader bf_header = bof_read_header(bf);
 
     //Initializing
     initialize(bf);
@@ -601,7 +529,6 @@ void run(const char *filename){
     //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
     print_memory_state(bin);
-    // instruction_print(stdout, 0, memory.instrs[0]);
     
     program_counter = 0;
     while (!halt) {
@@ -620,27 +547,9 @@ void run(const char *filename){
             print_memory_state(bin);
 
     }
-    //while (int i=0; i < MEMORY_SIZE_IN_WORDS; i++) {
-        //execute(memory.instrs[i]);
-    //}
-
-
-    // FILE *out_file = fopen("out_file.txt", "w");
-    // printf("run has been called");
-    // BOFFILE *f = open_file(filename);
-    // load_instructions(f);
-    // for(int i=0; i<sizeof(memory.instrs)/sizeof(memory.instrs[0]); i++){
-    //     //instr_type t = instruction_type(memory.instrs[i]);
-    //     //printf("%d", t);
-    //     bin_instr_t *ptr = &memory.instrs[i];
-    //     uintptr_t add = (uintptr_t)ptr;
-    //     unsigned int int_add = (unsigned int)add;
-    //     fprintf(out_file, "%d    ", i);
-    //     instruction_print(out_file, int_add, memory.instrs[i]);
-    // }
-    // fclose(out_file);
 }
 
+//WE HAVE TWO OF THESE??? THIS AND print_command
 //when given the "-p" flag, prints out the instructions as written
 void print_program (const char *filename){
 
@@ -700,7 +609,6 @@ void print_memory_range(int start, int end, int print_checker) {
                 tracker++;
 
             num_zeros = 0;
-            // num_chars += 16;
             print_ellipse = 1;
         }
 
@@ -711,10 +619,6 @@ void print_memory_range(int start, int end, int print_checker) {
         }
 
         if (print_ellipse == 1 && print_checker == 0) {
-
-            // if (num_chars + 16 > 70)
-            //     printf("\n");
-
             printf("        ...     ");
         }
         
@@ -757,18 +661,14 @@ void print_current_instruction(bin_instr_t current_instr) {
 }
 
 //prints the current state of the memory stack
-//could be useful for debugging - Benny: Changed for initial state usage
 void print_memory_state(bin_instr_t current_instr){
 
     if (!halt) {
         print_trace_header();
-        // print_data(GP);//print between $gp and $sp
-        // print_data(SP);//print between $sp and $fp
 
         print_memory_range(GPR[GP], GPR[SP], 0);
         print_memory_range(GPR[SP], GPR[FP]+1, 0);
         printf("\n");
-        // printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
    }
     
 }//end of print_state
