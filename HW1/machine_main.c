@@ -7,8 +7,6 @@
 
 int main(int argc, char *argv[]) {
 
-    const char *command = argv[0];
-
     //Three args present, check for -p
     if(argc == 3) {
         if (strcmp(argv[1], "-p") == 0) {

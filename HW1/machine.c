@@ -17,9 +17,6 @@
 #define MEMORY_SIZE_IN_WORDS 32768
 #define BYTES_PER_WORD 4
 
-//out file
-FILE *out_file;
-
 //memory array for the VM
 //the data is shared in a union
 static union mem_u{
@@ -84,8 +81,6 @@ void initialize(BOFFILE bf){
 
     //Open the file
     // BOFFILE bof = bof_read_open(something);
-
-    printf("trying to open header in init()");
     if (fseek(bf.fileptr, 0, SEEK_SET) != 0) {
         printf("file pointer not at beginning");
     }
@@ -108,56 +103,6 @@ void initialize(BOFFILE bf){
     
 }
 
-//read/decode and put instructions into memory
-//will probably use a lot from instructions file
-/*
-//this newer load_instructions file did not work, but the old one does work so I put it back in here
-void load_instructions(BOFFILE *f){
-
-    //should initialize PC to val specified in bof here
-
-    if(f->fileptr == NULL){
-        printf("fileptr null");
-    }
-
-    if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
-        printf("file pointer not at beginning");
-    }
-
-    printf("trying to open header in load_instrs()");
-    BOFHeader header = bof_read_header(*f);
-
-    if(!bof_has_correct_magic_number(header)){
-        bail_with_error("Invalid magic number");
-    }
-
-    int num_instr = 0;
-    //instead of moving the pointer to the end and then getting size, we can just use the
-    //bof.h function bof_at_eof that returns true when at the end
-
-    //while not at the end and number of instructions did not exceed memory
-    while (!bof_at_eof(*f) && num_instr <= MEMORY_SIZE_IN_WORDS) {
-        printf("%d", num_instr);
-        if(ftell(f->fileptr) == EOF){
-            printf("\nReached the end of the file");
-            printf("%ld %d", ftell(f->fileptr), EOF);
-            break;
-        }
-        bin_instr_t instr = instruction_read(*f);
-        //puts the bin_instr_t into memory at memory.instrs
-        memory.instrs[num_instr] = instr;
-        num_instr++;
-    }
-
-    //too many instructions
-    if(num_instr >= MEMORY_SIZE_IN_WORDS){
-        bail_with_error("instr array full");
-    }
-    
-    printf("Reached the end of the file");
-}
-*/
-
 void load_instructions(BOFFILE *f){
 
     if (fseek(f->fileptr, 0, SEEK_SET) != 0) {
@@ -166,9 +111,6 @@ void load_instructions(BOFFILE *f){
     BOFHeader header = bof_read_header(*f);
 
     int count = header.text_length;
-    printf("header text len: %d\n", header.text_length);
-
-    printf("count: %d\n\n", count);
 
     for(int i=0; i<count; i++){
         memory.instrs[i] = instruction_read(*f);
@@ -344,7 +286,7 @@ void execute(bin_instr_t bi){
             switch(syscalli.code){
                 case print_str_sc:
                     {
-                        memory.words[GPR[SP]] = printf("%s", &memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        memory.words[GPR[SP]] = printf("%ls", &memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
                         break;
                     }
                 case print_char_sc:
@@ -355,7 +297,6 @@ void execute(bin_instr_t bi){
                     }
                 case read_char_sc:
                     {
-                        int char_to_read = getc(stdin);
                         memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)] = getc(stdin);
                         break;
                     }
@@ -564,7 +505,7 @@ void execute(bin_instr_t bi){
 //when given the "-p" flag, prints out the instructions as written
 //Wes
 void print_command (const char *filename){
-
+ 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
     BOFHeader bf_header = bof_read_header(bf);
@@ -598,13 +539,16 @@ void print_command (const char *filename){
         instruction_print(stdout, addr, instr);
         if(instruction_type(instr) == syscall_instr_type && instruction_syscall_number(instr) == exit_sc){
             int dataLength = bf_header.data_length; 
-            address_type address = bf_header.text_start_address;
+            address_type address = bf_header.data_start_address;
             while(dataLength >= 1){
                 //print the data address
                 int value = bof_read_word(bf);
                 printf("%d: %d\t", address, value);
                 dataLength--;
                 address++;
+            }
+            if(dataLength == 0){
+                printf("%d: %d\t", address, 0);
             }
             //attach flag: I dont understand why sometimes there is a 1 at the end of the lsts
             //seems to be some kind of flag but not sure
@@ -637,11 +581,6 @@ void print_instructions(){
 //works as the main function of this file
 //call init, open, load, execute and trace 
 void run(const char *filename){
-
-    out_file = fopen("out_file.txt", "w"); 
-
-    printf("Run has been called\n\n");
-
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
     //printf("trying to open header in run()");
@@ -652,9 +591,6 @@ void run(const char *filename){
 
     //Loading Instructions
     load_instructions(&bf);
-
-    //print instructions (for debugging)
-    // print_instructions();
 
     //print initial state after loading instruction
     bin_instr_t bin = blankInstr;
@@ -721,95 +657,6 @@ void print_program (const char *filename){
     //Print Data Section
 }
 
-//converts the instruction to a string
-//used for the print_state function
-/*char * toString(bin_instr_t bin){
-    char instr [MEMORY_SIZE_IN_WORDS];//this is the finale
-    char one [MEMORY_SIZE_IN_WORDS];
-    char two [MEMORY_SIZE_IN_WORDS];
-    char three [MEMORY_SIZE_IN_WORDS];
-    char four [MEMORY_SIZE_IN_WORDS];
-    char five [MEMORY_SIZE_IN_WORDS];
-    char six [MEMORY_SIZE_IN_WORDS];
-
-    switch(instruction_type(bin)){
-        case comp_instr_type:
-        {
-            comp_instr_t compi = bin.comp;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", compi.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", compi.rt);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", compi.ot);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hu", compi.rs);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hd", compi.os);
-            snprintf(six, MEMORY_SIZE_IN_WORDS, "%hu", compi.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            strcat(instr, six);
-            break;
-        }//end of comp_instr_type case
-        case other_comp_instr_type:
-        {
-            other_comp_instr_t othci = bin.othc;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", othci.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", othci.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", othci.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%hd", othci.arg);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", othci.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            break;
-        }//end of other_comp_instr_type case
-        case syscall_instr_type:
-        {
-            syscall_instr_t syscalli = bin.syscall;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", syscalli.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", syscalli.code);
-            snprintf(five, MEMORY_SIZE_IN_WORDS, "%hu", syscalli.func);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            strcat(instr, five);
-            break;
-        }//end of syscall_instr_type case
-        case immed_instr_type:
-        {
-            immed_instr_t immedi = bin.immed;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", immedi.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%hu", immedi.reg);
-            snprintf(three, MEMORY_SIZE_IN_WORDS, "%hd", immedi.offset);
-            snprintf(four, MEMORY_SIZE_IN_WORDS, "%d", immedi.immed);
-            strcpy(instr, one);
-            strcat(instr, two);
-            strcat(instr, three);
-            strcat(instr, four);
-            break;
-        }//end of immed_instr_type case
-        case jump_instr_type:
-        {
-            jump_instr_t jump = bin.jump;
-            snprintf(one, MEMORY_SIZE_IN_WORDS, "%hu", jump.op);
-            snprintf(two, MEMORY_SIZE_IN_WORDS, "%u", jump.addr);
-            strcpy(instr, one);
-            strcat(instr, two);
-            break;
-        }//end of jump_instr_type case
-        default:
-        {
-            bail_with_error("Illegal Instruction Type");
-            break;
-        }
-    }
-    return instr;
-}*/
 
 //prints the program counter and the current status of the
 //of the general purpose registers
@@ -823,108 +670,8 @@ void print_trace_header(){
     printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
 }//end of print_trace_header
 
-//prints data from the GPR[GPRindex] to GPR[GPRindex+1] exclusive of GPR[GPRindex+1]
-    // void print_data(int GPRindex){
-    //     //variable to keep track of the offset from the GPRindex
-    //     int memoryOffset = 0;
-
-    //     //variable to keep track of characters in a line
-    //     //can't exceed 69
-    //     int numChars = 0;
-    //     while(memory.words[GPR[GPRindex] + memoryOffset] != memory.words[GPR[GPRindex+1]]){
-    //         //skips printing if all 0s until the next nonzero-value or the end of the loop
-    //         //the first condition prevents inadvertently accessing an instr
-    //         //the second and third conditions ensure the first zero is printed and only
-    //         //consecutive 0s are skipped
-    //         if((memoryOffset > 1) && (memory.words[GPR[GPRindex] + memoryOffset] == 0) && (memory.words[GPR[GPRindex] + memoryOffset - 1] == 0)){
-    //             //prints ellipse iff the next value is nonzero or the end of the loop
-    //             //will be reached on the next iteration
-    //             if((GPR[GPRindex] + memoryOffset + 1 == GPR[GPRindex + 1]) || (memory.words[GPR[GPRindex] + memoryOffset + 1] != 0)){
-    //                 printf("        ...     \n");
-    //             }
-    //             memoryOffset++;
-    //             continue;
-    //         }//end of zeroes logic
-            
-    //         //determines if a newline will need to be printed
-    //         numChars = numChars + 10 + count_digits(memory.words[GPR[GPRindex] + memoryOffset]);
-    //         if(numChars > 69){
-    //             printf("\n");
-    //             numChars = 0;
-    //         }
-    //         printf("    %4d: %d\t", (GPR[GPRindex] + memoryOffset), memory.words[GPR[GPRindex] + memoryOffset]);
-    //         memoryOffset++;
-    //     }
-   /*
-    
-    
-    int MAX_STRING_LENGTH = 80;
-    int TAB_LENGTH = 8;
-
-    char printString[MAX_STRING_LENGTH];
-    char tempString[32];//need to check and make sure this makes sense
-    //trying to avoid DMA shenanigans1
-
-
-
-    //prints all memory between $gp and $sp
-    int memoryIndex = 0;
-
-    while(GPR[0] + memoryIndex < GPR[1]){
-        printString[0] = '\0';
-        tempString[0] = '\0';
-        int tabIndex = 1;//max of 8 tabs
-
-        if(memoryIndex > 1 && (memory.words[GPR[0]+ memoryIndex] == 0) && (memory.words[GPR[0] + memoryIndex -1] == 0)){
-            if((GPR[0] + memoryIndex + 1) == GPR[1] || (memory.words[GPR[0]+memoryIndex+1] != 0)){
-                printf("        ...     \n");
-            }
-            memoryIndex++;
-            continue;
-        }
-
-        for(int index = 0; index < MAX_STRING_LENGTH; index++){
-            if(GPR[0]+ memoryIndex == GPR[1]) break;
-            strcpy(tempString, (char*)(GPR[0] + memoryIndex));
-            int tempStringLength = strlen(tempString);
-            int tempIndex = 0;
-            //fills in 8 indices of the printString preceding ':'
-            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                //Benny Comment 9-25 : bad practice to use strlen() in a loop header (it calls the function every time the loop runs)
-                //Benny Comment 9-25 : will not be an issue nor affect our runtime, just thought id be more nitpicky :D <3
-                if(index < TAB_LENGTH - tempStringLength)
-                    printString[index] = ' ';
-                else {
-                    printString[index] = tempString[tempIndex];
-                    tempIndex++;
-                }
-            }
-            tempIndex = 0;
-            tabIndex++;
-            //fills in indices of printString including and succeeding ':'
-            printString[index] = ':';
-            index++;
-            printString[index] = ' ';
-            strcpy(tempString, (char*)memory.words[GPR[0] + memoryIndex]);
-            tempStringLength = strlen(tempString);
-            for(index = index; index < (tabIndex * TAB_LENGTH); index++){
-                if(tempIndex < tempStringLength){
-                    printString[index] = tempString[tempIndex];
-                    tempIndex++;
-                }
-                else printString[index] = ' ';
-            }
-            tabIndex++;
-            memoryIndex++;
-        }
-        printf("%s\n", printString);
-    }//end of while loop that prints everything between $gp and $sp*/
-// }//end of print_data
-
 
 void print_memory_range(int start, int end) {
-
-    // printf("\nstart: %d, end: %d\n", start, end);
 
     int tracker = start;
     int num_zeros = 0;
@@ -935,7 +682,6 @@ void print_memory_range(int start, int end) {
         printf("    %4d: %d\t", tracker, memory.words[tracker]);
         return;
     }
-        
 
     while (tracker < end) {
         print_ellipse = 0;
@@ -945,7 +691,7 @@ void print_memory_range(int start, int end) {
             while (memory.words[tracker] == 0 && tracker < end)
                 tracker++;
 
-            num_zeros == 0;
+            num_zeros = 0;
             num_chars += 16;
             print_ellipse = 1;
         }

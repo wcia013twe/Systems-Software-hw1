@@ -10,7 +10,17 @@
 extern void run(const char *filename);
 
 //prints the instructions provided without executing
-void print_program (const char *filename);
+void print_command (const char *filename);
 
+//loads instructions from bof file into memory
 void load_instructions(BOFFILE *f);
+
+//prints the data between GP and SP and between SP and FP
+void print_memory_state(bin_instr_t current_instr);
+
+//prints the current instruction pointed to by PC
+void print_current_instruction(bin_instr_t current_instr);
+
+//counts the number of digits in an int
+int count_digits (int number);
 #endif
