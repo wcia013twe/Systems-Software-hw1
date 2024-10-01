@@ -526,38 +526,26 @@ void print_command (const char *filename){
             -print the instruction
     
     */
-    while (!bof_at_eof(bf)) {
+    while (addr < bf_header.text_length + bf_header.text_start_address) {
         bin_instr_t instr = instruction_read(bf);
-
-
-        /*
-            This is where I am trying to tell the program to exit when EXIT is called,
-            I've yet to make this work but bof_read_word but it should start from each register
-            and print the address, memory with formatting.
-        */
-        
         instruction_print(stdout, addr, instr);
-        if(instruction_type(instr) == syscall_instr_type && instruction_syscall_number(instr) == exit_sc){
-            int dataLength = bf_header.data_length; 
-            address_type address = bf_header.data_start_address;
-            while(dataLength >= 1){
-                //print the data address
-                int value = bof_read_word(bf);
-                printf("%d: %d\t", address, value);
-                dataLength--;
-                address++;
-            }
-            if(dataLength == 0){
-                printf("%d: %d\t", address, 0);
-            }
-            //attach flag: I dont understand why sometimes there is a 1 at the end of the lsts
-            //seems to be some kind of flag but not sure
-
-            printf("        ...     \n");
-            break;
-        }
         addr += 1; //jump to the next instruction
     }
+
+    //print the data section
+    int dataLength = bf_header.data_length; 
+    address_type address = bf_header.data_start_address;
+    while(dataLength > 0){
+        //print the data address
+        int value = bof_read_word(bf);
+        printf("%d: %d\t", address, value);
+        dataLength--;
+        address++;
+    }
+    if(dataLength == 0){
+        printf("%d: %d\t", address, 0);
+    }
+    printf("        ...     \n");
     
     bof_close(bf);
     exit(EXIT_SUCCESS);
