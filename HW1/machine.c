@@ -114,23 +114,6 @@ void load_instructions(BOFFILE *f){
     }
 }
 
-
-//do what the instruction says
-//move fp, sp and pc as needed
-void push(word_type value) {
-    if (GPR[SP] >= MEMORY_SIZE_IN_WORDS) {
-        bail_with_error("Stack overflow");
-    }
-    memory.words[GPR[SP]++] = value;
-}
-
-word_type pop() {
-    if (GPR[SP] <= 0) {
-        bail_with_error("Stack underflow");
-    }
-    return memory.words[--GPR[SP]];
-}
-
 void execute(bin_instr_t bi){
     switch(instruction_type(bi)){
         case comp_instr_type:
@@ -432,87 +415,6 @@ void execute(bin_instr_t bi){
     }
 }
 
-//WE HAVE TWO OF THESE??? THIS AND print_program
-//when given the "-p" flag, prints out the instructions as written
-void print_command (const char *filename){
- 
-    //Opening BOFFILE
-    BOFFILE bf = bof_read_open(filename);
-    BOFHeader bf_header = bof_read_header(bf);
-
-    //Check its valid bof
-    if(!bof_has_correct_magic_number(bf_header)){
-        bail_with_error("Error: Incorrect magic number in file: %s\n", filename);
-    };
-
-    //prints "Address Instruction"
-    instruction_print_table_heading(stdout);
-
-    address_type addr = bf_header.text_start_address;
-
-    /*
-        While not at the end of the file
-            -get the instruction
-            -print the instruction
-    
-    */
-    while (addr < bf_header.text_length + bf_header.text_start_address) {
-        bin_instr_t instr = instruction_read(bf);
-        instruction_print(stdout, addr, instr);
-        addr += 1; //jump to the next instruction
-    }
-
-    //print the data section
-    int num_zeros = 0;
-    int dataLength = bf_header.data_length; 
-    address_type address = bf_header.data_start_address;
-    while(dataLength > 0){
-        //print the data address
-        int value = bof_read_word(bf);
-        printf("%d: %d\t", address, value);
-        dataLength--;
-        address++;
-
-        if (value == 0)
-            num_zeros++;
-
-        if (num_zeros > 1) {
-            while (value == 0 && dataLength > 0) {
-                int value = bof_read_word(bf);
-                dataLength--;
-                address++;
-            }
-
-            num_zeros = 0;
-
-            if (value != 0)
-                printf("        ...     \n");
-
-        }
-
-    }
-    if(dataLength == 0){
-        printf("%d: %d\t", address, 0);
-    }
-    printf("        ...     \n");
-    
-    bof_close(bf);
-    exit(EXIT_SUCCESS);
-}
-
-void print_instructions(const char* filename){
-    BOFFILE bf = bof_read_open(filename);
-    BOFHeader bf_header= bof_read_header(bf);
-
-    address_type addr = bf_header.text_start_address;
-
-    while (addr < bf_header.text_length + bf_header.text_start_address) {
-        bin_instr_t instr = instruction_read(bf);
-        instruction_print(stdout, addr, instr);
-        addr += 1; //jump to the next instruction
-    }
-}
-
 //puts the functionality of all the previous functions together
 //works as the main function of this file
 //call init, open, load, execute and trace 
@@ -549,7 +451,6 @@ void run(const char *filename){
     }
 }
 
-//WE HAVE TWO OF THESE??? THIS AND print_command
 //when given the "-p" flag, prints out the instructions as written
 void print_program (const char *filename){
 
@@ -573,20 +474,6 @@ void print_program (const char *filename){
     //Print Data Section
     print_memory_range(GPR[GP], GPR[GP] + bf_header.data_length+1, 1);
 }
-
-
-//prints the program counter and the current status of the
-//of the general purpose registers
-void print_trace_header(){
-    //trace header, one per instruction
-    printf("      PC: %d", program_counter);
-    if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
-    printf("\n");
-
-    printf("GPR[$gp]: %d\tGPR[$sp]: %d\tGPR[$fp]: %d\tGPR[$r3]: %d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
-    printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
-}//end of print_trace_header
-
 
 void print_memory_range(int start, int end, int print_checker) {
 
@@ -671,4 +558,4 @@ void print_memory_state(bin_instr_t current_instr){
         printf("\n");
    }
     
-}//end of print_state
+}//end of print_memory_state
