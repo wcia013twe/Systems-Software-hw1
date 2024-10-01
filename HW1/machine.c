@@ -286,7 +286,7 @@ void execute(bin_instr_t bi){
             switch(syscalli.code){
                 case print_str_sc:
                     {
-                        memory.words[GPR[SP]] = printf("%ls", &memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
+                        memory.words[GPR[SP]] = printf("%s", (char *)&memory.words[GPR[syscalli.reg] + machine_types_formOffset(syscalli.offset)]);
                         break;
                     }
                 case print_char_sc:
