@@ -696,32 +696,61 @@ void print_memory_range(int start, int end, int print_checker) {
 
         if (num_zeros > 0 && memory.words[tracker] == 0) {
             
-            while (memory.words[tracker] == 0 && tracker < end)
+            while (memory.words[tracker] == 0 && tracker < end) {
                 tracker++;
+                num_zeros++;
+            }
+
+            // num_chars += 16;
+
+            if (num_zeros > 1)
+                print_ellipse = 1;
 
             num_zeros = 0;
-            // num_chars += 16;
-            print_ellipse = 1;
         }
 
-        num_chars = num_chars + 10 + count_digits(memory.words[tracker]) + count_digits(tracker);
-        if(num_chars > 70){
-            printf("\n");
-            num_chars = 0;
-        }
+        // num_chars = num_chars + 10 + count_digits(memory.words[tracker]) + count_digits(tracker);
+        // if(num_chars > 59){
+        //     printf("\n");
+        //     num_chars = 0;
+        // }
 
         if (print_ellipse == 1 && print_checker == 0) {
 
-            // if (num_chars + 16 > 70)
-            //     printf("\n");
+            
 
             printf("        ...     ");
+            num_chars += 16;
+
+            if (num_chars > 59) {
+                // printf("num chars: %d", num_chars);
+
+                printf("\n");
+                num_chars = 0;
+
+            }
+
         }
         
         if (tracker < end) {
             printf("    %4d: %d\t", tracker, memory.words[tracker]);
             num_zeros = 0;
+            num_chars += 4 + (4 - count_digits(tracker)) + count_digits(tracker) + 2 + count_digits(memory.words[tracker]) + 1;
+
+            // printf("%d ", num_chars);
+
+            
         }
+
+        if (num_chars > 59) {
+
+                // printf("num chars: %d", num_chars);
+                printf("\n");
+
+
+                num_chars = 0;
+
+            }
 
         if (memory.words[tracker] == 0)
             num_zeros++;
