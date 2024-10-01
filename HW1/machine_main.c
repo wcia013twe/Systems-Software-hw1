@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     //Three args present, check for -p
     if(argc == 3) {
         if (strcmp(argv[1], "-p") == 0) {
-            print_command(argv[2]);
+            print_program(argv[2]);
         }
     }
 

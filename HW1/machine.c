@@ -533,6 +533,7 @@ void print_command (const char *filename){
     }
 
     //print the data section
+    int num_zeros = 0;
     int dataLength = bf_header.data_length; 
     address_type address = bf_header.data_start_address;
     while(dataLength > 0){
@@ -541,6 +542,24 @@ void print_command (const char *filename){
         printf("%d: %d\t", address, value);
         dataLength--;
         address++;
+
+        if (value == 0)
+            num_zeros++;
+
+        if (num_zeros > 1) {
+            while (value == 0 && dataLength > 0) {
+                int value = bof_read_word(bf);
+                dataLength--;
+                address++;
+            }
+
+            num_zeros = 0;
+
+            if (value != 0)
+                printf("        ...     \n");
+
+        }
+
     }
     if(dataLength == 0){
         printf("%d: %d\t", address, 0);
@@ -551,17 +570,16 @@ void print_command (const char *filename){
     exit(EXIT_SUCCESS);
 }
 
-void print_instructions(){
-    int num_instrs = 0;
-    for(int i=0; i<MEMORY_SIZE_IN_WORDS; i++){
-        bin_instr_t *ptr = &memory.instrs[i];
-        // uintptr_t add = (uintptr_t)ptr;
-        // unsigned int int_add = (unsigned int)add;
-        if(instruction_type(*ptr) == comp_instr_type && ptr->comp.op == 0){
-            continue;
-        }
-        instruction_print(stdout, num_instrs, memory.instrs[i]);
-        num_instrs++;
+void print_instructions(const char* filename){
+    BOFFILE bf = bof_read_open(filename);
+    BOFHeader bf_header= bof_read_header(bf);
+
+    address_type addr = bf_header.text_start_address;
+
+    while (addr < bf_header.text_length + bf_header.text_start_address) {
+        bin_instr_t instr = instruction_read(bf);
+        instruction_print(stdout, addr, instr);
+        addr += 1; //jump to the next instruction
     }
 }
 
@@ -628,6 +646,7 @@ void print_program (const char *filename){
 
     //Opening BOFFILE
     BOFFILE bf = bof_read_open(filename);
+    BOFHeader bf_header = bof_read_header(bf);
 
     //Initializing
     initialize(bf);
@@ -640,9 +659,10 @@ void print_program (const char *filename){
     instruction_print_table_heading(stdout);
 
     //Printing Instructions
-    print_instructions();
+    print_instructions(filename);
 
     //Print Data Section
+    print_memory_range(GPR[GP], GPR[GP] + bf_header.data_length+1, 1);
 }
 
 
@@ -659,7 +679,7 @@ void print_trace_header(){
 }//end of print_trace_header
 
 
-void print_memory_range(int start, int end) {
+void print_memory_range(int start, int end, int print_checker) {
 
     int tracker = start;
     int num_zeros = 0;
@@ -680,18 +700,23 @@ void print_memory_range(int start, int end) {
                 tracker++;
 
             num_zeros = 0;
-            num_chars += 16;
+            // num_chars += 16;
             print_ellipse = 1;
         }
 
-        num_chars = num_chars + 10 + count_digits(memory.words[tracker]);
-        if(num_chars > 69){
+        num_chars = num_chars + 10 + count_digits(memory.words[tracker]) + count_digits(tracker);
+        if(num_chars > 70){
             printf("\n");
             num_chars = 0;
         }
 
-        if (print_ellipse == 1)
+        if (print_ellipse == 1 && print_checker == 0) {
+
+            // if (num_chars + 16 > 70)
+            //     printf("\n");
+
             printf("        ...     ");
+        }
         
         if (tracker < end) {
             printf("    %4d: %d\t", tracker, memory.words[tracker]);
@@ -703,6 +728,15 @@ void print_memory_range(int start, int end) {
         
         tracker++;
     } 
+
+    if (print_checker == 1) {
+        num_chars += 16;
+
+        if (num_chars > 70)
+            printf("\n");
+        printf("        ...     ");
+
+    }
 
     printf("\n");
 
@@ -731,8 +765,8 @@ void print_memory_state(bin_instr_t current_instr){
         // print_data(GP);//print between $gp and $sp
         // print_data(SP);//print between $sp and $fp
 
-        print_memory_range(GPR[GP], GPR[SP]);
-        print_memory_range(GPR[SP], GPR[FP]+1);
+        print_memory_range(GPR[GP], GPR[SP], 0);
+        print_memory_range(GPR[SP], GPR[FP]+1, 0);
         printf("\n");
         // printf("    %4d: %d\n", GPR[2], memory.words[GPR[2]]);//print $fp
    }
