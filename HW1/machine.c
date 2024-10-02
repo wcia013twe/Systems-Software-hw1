@@ -573,6 +573,28 @@ int count_digits (int number){
     return strlen(intAsString);
 }
 
+void print_instructions(const char* filename) {
+
+    BOFFILE bf = bof_read_open(filename);
+    BOFHeader bf_header = bof_read_header(bf);
+
+    address_type addr = bf_header.text_start_address;
+    while (addr < bf_header.text_start_address + bf_header.text_length) {
+        bin_instr_t instr = memory.instrs[addr];
+        instruction_print(stdout, addr, instr);
+    }
+}
+
+void print_trace_header(){
+    //trace header, one per instruction
+    printf("      PC: %d", program_counter);
+    if(HI != 0 || LO != 0) printf("\tHI: %d\tLO: %d", HI, LO);
+    printf("\n");
+
+    printf("GPR[$gp]: %d\tGPR[$sp]: %d\tGPR[$fp]: %d\tGPR[$r3]: %d\t",GPR[0], GPR[1], GPR[2], GPR[3]);
+    printf("GPR[$r4]: %d\nGPR[$r5]: %d\tGPR[$r6]: %d\tGPR[$ra]: %d\n",GPR[4], GPR[5], GPR[6], GPR[7]);
+}//end of print_trace_header
+
 void print_current_instruction(bin_instr_t current_instr) {
     if (program_counter != 0) {
         printf("==>");
