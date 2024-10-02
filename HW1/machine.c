@@ -157,7 +157,7 @@ void execute(bin_instr_t bi){
                     memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = memory.words[memory.words[GPR[compi.rs] +machine_types_formOffset(compi.os)]];
                     break;
                 case NEG_F:
-                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = ~memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
+                    memory.words[GPR[compi.rt] + machine_types_formOffset(compi.ot)] = (-1) * memory.words[GPR[compi.rs] + machine_types_formOffset(compi.os)];
                     break;
                 default:
                     bail_with_error("Illegal Comp Instruction");
