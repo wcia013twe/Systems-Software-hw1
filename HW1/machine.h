@@ -23,4 +23,10 @@ void print_current_instruction(bin_instr_t current_instr);
 
 //counts the number of digits in an int
 int count_digits (int number);
+
+//prints all instructions loaded in memory
+void print_instructions(const char* filename);
+
+//prints all memory locations and data from start (inclusive) to end (exlusive) - also utilized for print_program handling
+void print_memory_range(int start, int end, int print_checker);
 #endif
